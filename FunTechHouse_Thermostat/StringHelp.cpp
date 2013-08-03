@@ -23,12 +23,13 @@
 
 #include "StringHelp.h"
 #include <stdlib.h>
+#include <math.h>
 
 /**
  * Split a double into the integer and decimal part,
  * since the arduino sprintf cant handle double.
  *
- * Please note that the decimal part will be 2 digits, 
+ * Please note that the decimal part will be 2 digits,
  * so you may need to fill with zero when it is printed.
  * i.e. 4.04 will return 4 and 4, and 5.2 will return 5 and 20.
  *
@@ -39,6 +40,6 @@
 void StringHelp::splitDouble(double value, int* integer, int* decimal)
 {
     *integer = (int)(value);
-    *decimal = (int)((value-*integer)*100);
+    *decimal = (int)round((value-*integer)*100);
     *decimal = abs(*decimal);
 }

@@ -1,6 +1,6 @@
 /**
  * @file TestStringHelp.cpp
- * @author Johan Simonsson  
+ * @author Johan Simonsson
  * @brief Testfile for StringHelp
  */
 
@@ -47,7 +47,6 @@ void TestStringHelp::test_add_data()
     QTest::newRow("value  1.030") <<  1.03 <<  1 <<  3;
     QTest::newRow("value  1.300") <<  1.30 <<  1 << 30;
 
-
     QTest::newRow("value 10  ") << 10.0 << 10 <<  0;
     QTest::newRow("value  5.4") <<  5.4 <<  5 << 40;
     QTest::newRow("value  0.3") <<  0.3 <<  0 << 30;
@@ -55,9 +54,12 @@ void TestStringHelp::test_add_data()
     QTest::newRow("value -10  ") << -10.0 << -10 <<  0;
     QTest::newRow("value  -5.4") <<  -5.4 <<  -5 << 40;
     QTest::newRow("value  -0.3") <<  -0.3 <<  -0 << 30;
- 
-    //Rounding error, becomes 5.59!
-    //QTest::newRow("value  5.6") <<  5.6 <<  5 << 60;
+
+    QTest::newRow("value   5.6")  <<   5.6  <<   5 << 60;
+    QTest::newRow("value  42.62") <<  42.62 <<  42 << 62;
+
+    QTest::newRow("value  -5.6")  <<  -5.6  <<  -5 << 60;
+    QTest::newRow("value -42.62") << -42.62 << -42 << 62;
 };
 
 void TestStringHelp::test_add()
