@@ -40,8 +40,17 @@ class TestThermostat : public QObject
         void test_getStageOut();
         void test_setStageOut();
 
-        void test_setpoint();
+        void test_valueTimeToSend();
 };
+
+
+#define PRINT_DATA() do{ \
+qDebug() << "Stages  :" << thermostat.stages; \
+qDebug() << "Value   :" << thermostat.value    << "sent:" << thermostat.valueSent; \
+qDebug() << "Setpoint:" << thermostat.setpoint << "sent:" << thermostat.setpointSent; \
+qDebug() << "output  :" << thermostat.stageOut << "sent:" << thermostat.stageOutSent ; \
+}while(0);
+
 
 void TestThermostat::test_getStageCount_data()
 {
@@ -118,24 +127,42 @@ void TestThermostat::test_setStageOut()
     QVERIFY(thermostat.setStageOut(0, false));
     QCOMPARE(thermostat.stageOut , (uint8_t)0x2);
 
+    QVERIFY(thermostat.setStageOut(0, false));
+    QCOMPARE(thermostat.stageOut , (uint8_t)0x2);
+
     //Do not allow to active stage output for non active stages
     thermostat.stageOut = 0x0;
     QCOMPARE(thermostat.setStageOut(4, true), false);
     QCOMPARE(thermostat.stageOut , (uint8_t)0x0);
 }
 
-void TestThermostat::test_setpoint()
+void TestThermostat::test_valueTimeToSend()
 {
     Thermostat thermostat(3);
 
     thermostat.setSetpoint(50.0);
     QCOMPARE(thermostat.getSetpoint() , 50.0);
+    thermostat.valueIsSent();
 
+    //Value lower than setpoint, should turn on the output.
     thermostat.valueTimeToSend(40.0);
     QCOMPARE(thermostat.getStageOut(0), true);
+    QCOMPARE(thermostat.getStageOut(1), false);
+    QCOMPARE(thermostat.getStageOut(2), false);
 
-    thermostat.valueTimeToSend(60.0);
+    thermostat.valueIsSent();
+
+    //Value higher than setpoint and we turn off.
+    QCOMPARE(thermostat.valueTimeToSend(60.0), true);
     QCOMPARE(thermostat.getStageOut(0), false);
+
+    //thermostat.valueIsSent();
+    //PRINT_DATA();
+    QCOMPARE(thermostat.valueTimeToSend(60.0), true);
+    //PRINT_DATA();
+    thermostat.valueIsSent();
+    //PRINT_DATA();
+    QCOMPARE(thermostat.valueTimeToSend(60.0), false);
 
 }
 

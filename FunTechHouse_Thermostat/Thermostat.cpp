@@ -38,7 +38,11 @@ Thermostat::Thermostat(unsigned int stageCount)
     stageOut = 0;
 
     //Some defaults.
-    this->setpoint = 60.0;
+    setpoint = 60.0;
+
+    valueSent    = 0;
+    setpointSent = 0;
+    stageOutSent = 0;
 };
 
 unsigned int Thermostat::getStageCount()
@@ -66,7 +70,9 @@ bool Thermostat::setStageOut(unsigned int stage, bool activate)
     }
     else
     {
-        stageOut ^= (1 << stage);
+        uint8_t mask = 0xFF;
+        mask ^= (1 << stage);
+        stageOut &= mask;
     }
 
     return true;
@@ -105,14 +111,43 @@ bool Thermostat::calcOutput()
 
 bool Thermostat::valueTimeToSend(double value)
 {
+    bool timeToSend = false;
+
     this->value = value;
 
     calcOutput();
 
-    /// @todo check diff...
+    if(value != valueSent)
+        timeToSend = true;
+
+    if(setpoint != setpointSent)
+        timeToSend = true;
+
+    if(stageOut != stageOutSent)
+        timeToSend = true;
     
-    return true;
+    return timeToSend;
 }
 
+/**
+ * If it is time to send data, 
+ * this functions prepares the string that should be sent to the server.
+ *
+ * @return char* to the string
+ */
+char* Thermostat::getValueString()
+{
+    /// @todo snprintf("value= setpoint= out=0..100%",...)
+    return NULL;
+}
 
-
+/**
+ * If we could send the package to the server, 
+ * then call this function since that will reset the internal counters.
+ */
+void Thermostat::valueIsSent()
+{
+    valueSent    = value; 
+    setpointSent = setpoint;
+    stageOutSent = stageOut;
+}

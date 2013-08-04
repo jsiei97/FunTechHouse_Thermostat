@@ -37,6 +37,10 @@ class Thermostat : public MQTT_Logic
          double setpoint;  ///< Target value
          uint8_t stageOut; ///< Output state for the stages, bit0 is stage0, bit1 is stage1 etc etc.
 
+         double valueSent;     ///< Last value sent to server.
+         double setpointSent;  ///< Last setpoint sent to server.
+         uint8_t stageOutSent; ///< Last output sent to server.
+
          bool setStageOut(unsigned int stage, bool activate);
          bool calcOutput();
 
@@ -49,6 +53,8 @@ class Thermostat : public MQTT_Logic
          double getSetpoint();
 
          bool valueTimeToSend(double value);
+         char* getValueString();
+         void valueIsSent();
 };
 
 #endif  // __THERMOSTAT_H
