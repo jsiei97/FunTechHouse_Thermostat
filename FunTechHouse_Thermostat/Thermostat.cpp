@@ -36,6 +36,9 @@ Thermostat::Thermostat(unsigned int stageCount)
 {
     stages = stageCount;
     stageOut = 0;
+
+    //Some defaults.
+    this->setpoint = 60.0;
 };
 
 unsigned int Thermostat::getStageCount()
@@ -68,3 +71,48 @@ bool Thermostat::setStageOut(unsigned int stage, bool activate)
 
     return true;
 }
+
+double Thermostat::getSetpoint()
+{
+    return setpoint;
+
+}
+void Thermostat::setSetpoint(double setpoint)
+{
+    this->setpoint = setpoint;
+}
+
+
+/**
+ * Calculate the new output.
+ *
+ * @return true if ok
+ */
+bool Thermostat::calcOutput()
+{
+    if(value < setpoint)
+    {
+        //Turn on the output
+        setStageOut(0, true);
+    }
+    else
+    {
+        //Turn off the output
+        setStageOut(0, false);
+    }
+    return true;
+}
+
+bool Thermostat::valueTimeToSend(double value)
+{
+    this->value = value;
+
+    calcOutput();
+
+    /// @todo check diff...
+    
+    return true;
+}
+
+
+

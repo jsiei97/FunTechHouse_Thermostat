@@ -32,15 +32,23 @@ class Thermostat : public MQTT_Logic
 {
      private:
          unsigned int stages; ///< How many output stages does this thermostat have?
-         uint8_t stageOut;    ///< Output state for the stages, bit0 is stage0, bit1 is stage1 etc etc.
+
+         double value;     ///< Measured process value, i.e. temperature.
+         double setpoint;  ///< Target value
+         uint8_t stageOut; ///< Output state for the stages, bit0 is stage0, bit1 is stage1 etc etc.
 
          bool setStageOut(unsigned int stage, bool activate);
+         bool calcOutput();
 
      public:
          Thermostat(unsigned int stages);
          unsigned int getStageCount();
          bool getStageOut(unsigned int stage);
 
+         void setSetpoint(double setpoint);
+         double getSetpoint();
+
+         bool valueTimeToSend(double value);
 };
 
 #endif  // __THERMOSTAT_H

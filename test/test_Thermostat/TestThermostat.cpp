@@ -39,6 +39,8 @@ class TestThermostat : public QObject
 
         void test_getStageOut();
         void test_setStageOut();
+
+        void test_setpoint();
 };
 
 void TestThermostat::test_getStageCount_data()
@@ -120,6 +122,21 @@ void TestThermostat::test_setStageOut()
     thermostat.stageOut = 0x0;
     QCOMPARE(thermostat.setStageOut(4, true), false);
     QCOMPARE(thermostat.stageOut , (uint8_t)0x0);
+}
+
+void TestThermostat::test_setpoint()
+{
+    Thermostat thermostat(3);
+
+    thermostat.setSetpoint(50.0);
+    QCOMPARE(thermostat.getSetpoint() , 50.0);
+
+    thermostat.valueTimeToSend(40.0);
+    QCOMPARE(thermostat.getStageOut(0), true);
+
+    thermostat.valueTimeToSend(60.0);
+    QCOMPARE(thermostat.getStageOut(0), false);
+
 }
 
 QTEST_MAIN(TestThermostat)
