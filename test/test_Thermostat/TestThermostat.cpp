@@ -39,6 +39,7 @@ class TestThermostat : public QObject
 
         void test_getStageOut();
         void test_setStageOut();
+        void test_incStageOut();
 
         void test_valueTimeToSend();
 };
@@ -136,6 +137,32 @@ void TestThermostat::test_setStageOut()
     QCOMPARE(thermostat.stageOut , (uint8_t)0x0);
 }
 
+void TestThermostat::test_incStageOut()
+{
+    Thermostat thermostat(4); // Stage: 0,1,2,3
+
+    QCOMPARE(thermostat.stageOut , (uint8_t)0x0);
+    thermostat.incStageOut();
+    QCOMPARE(thermostat.stageOut , (uint8_t)0x1);
+    thermostat.incStageOut();
+    QCOMPARE(thermostat.stageOut , (uint8_t)0x3);
+    thermostat.incStageOut();
+    QCOMPARE(thermostat.stageOut , (uint8_t)0x7);
+
+    //No more inc since we maxed out the stages...
+    //thermostat.incStageOut();
+    //QCOMPARE(thermostat.stageOut , (uint8_t)0x7);
+
+
+    Thermostat th2(1);
+    QCOMPARE(th2.stageOut , (uint8_t)0x0);
+    th2.incStageOut();
+    QCOMPARE(th2.stageOut , (uint8_t)0x1);
+    //th2.incStageOut();
+    //QCOMPARE(th2.stageOut , (uint8_t)0x1);
+
+}
+
 void TestThermostat::test_valueTimeToSend()
 {
     Thermostat thermostat(3);
@@ -150,6 +177,7 @@ void TestThermostat::test_valueTimeToSend()
     QCOMPARE(thermostat.getStageOut(1), false);
     QCOMPARE(thermostat.getStageOut(2), false);
 
+    /// @todo Check string here
     thermostat.valueIsSent();
 
     //Value higher than setpoint and we turn off.
@@ -163,7 +191,59 @@ void TestThermostat::test_valueTimeToSend()
     thermostat.valueIsSent();
     //PRINT_DATA();
     QCOMPARE(thermostat.valueTimeToSend(60.0), false);
+    QCOMPARE(thermostat.valueTimeToSend(40.0), true);
+    QCOMPARE(thermostat.getStageOut(0), true);
+    QCOMPARE(thermostat.getStageOut(1), false);
+    QCOMPARE(thermostat.getStageOut(2), false);
 
+    /// @todo Check string here
+    thermostat.valueIsSent();
+
+    //Above was 1 low value count
+    //And then stop 1 before..
+    for(int step=0; step<(LOW_VALUE_COUNT_MAX-1-1); step++)
+    {
+        //qDebug() << "step" << step;
+        QCOMPARE(thermostat.valueTimeToSend(40.0), false);
+        QCOMPARE(thermostat.getStageOut(0), true);
+        QCOMPARE(thermostat.getStageOut(1), false);
+        QCOMPARE(thermostat.getStageOut(2), false);
+    }
+
+    QCOMPARE(thermostat.valueTimeToSend(40.0), true);
+    QCOMPARE(thermostat.getStageOut(0), true);
+    QCOMPARE(thermostat.getStageOut(1), true);
+    QCOMPARE(thermostat.getStageOut(2), false);
+
+    /// @todo Check string here
+    thermostat.valueIsSent();
+
+    //And then stop 1 before..
+    for(int step=0; step<(LOW_VALUE_COUNT_MAX-1); step++)
+    {
+        //qDebug() << "step" << step;
+        QCOMPARE(thermostat.valueTimeToSend(40.0), false);
+        QCOMPARE(thermostat.getStageOut(0), true);
+        QCOMPARE(thermostat.getStageOut(1), true);
+        QCOMPARE(thermostat.getStageOut(2), false);
+    }
+
+    QCOMPARE(thermostat.valueTimeToSend(40.0), true);
+    QCOMPARE(thermostat.getStageOut(0), true);
+    QCOMPARE(thermostat.getStageOut(1), true);
+    QCOMPARE(thermostat.getStageOut(2), true);
+
+
+    /// @todo Check string here
+    thermostat.valueIsSent();
+
+    //Value higher than setpoint and we turn off.
+    QCOMPARE(thermostat.valueTimeToSend(60.0), true);
+    QCOMPARE(thermostat.getStageOut(0), false);
+    QCOMPARE(thermostat.getStageOut(1), false);
+    QCOMPARE(thermostat.getStageOut(2), false);
+
+    /// @todo Check string here
 }
 
 QTEST_MAIN(TestThermostat)

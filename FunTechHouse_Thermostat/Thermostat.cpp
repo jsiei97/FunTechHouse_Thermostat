@@ -38,11 +38,14 @@ Thermostat::Thermostat(unsigned int stageCount)
     stageOut = 0;
 
     //Some defaults.
+    value = 0;   
     setpoint = 60.0;
 
     valueSent    = 0;
     setpointSent = 0;
     stageOutSent = 0;
+
+    lowValueCount = 0;
 };
 
 unsigned int Thermostat::getStageCount()
@@ -57,6 +60,17 @@ bool Thermostat::getStageOut(unsigned int stage)
 
     uint8_t mask = 1 << stage;
     return bool(stageOut & mask);
+}
+
+/**
+ * Enable the next step and keep the old steps active.
+ */
+void Thermostat::incStageOut()
+{
+    stageOut <<= 1;
+    stageOut |= 0x1;
+
+    /// @todo Do not inc more than max stages
 }
 
 bool Thermostat::setStageOut(unsigned int stage, bool activate)
@@ -99,12 +113,23 @@ bool Thermostat::calcOutput()
     if(value < setpoint)
     {
         //Turn on the output
+        lowValueCount++;
+
+        if(lowValueCount % LOW_VALUE_COUNT_MAX == 0)
+        {
+            //Enable next step
+            incStageOut();
+        }
+
         setStageOut(0, true);
     }
     else
     {
         //Turn off the output
-        setStageOut(0, false);
+        lowValueCount = 0;
+
+        //setStageOut(0, false);
+        stageOut = 0x0;
     }
     return true;
 }

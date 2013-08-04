@@ -28,6 +28,9 @@
 
 #include "MQTT_Logic.h"
 
+//Time until next stage kicks in
+#define LOW_VALUE_COUNT_MAX 180
+
 class Thermostat : public MQTT_Logic
 {
      private:
@@ -41,7 +44,11 @@ class Thermostat : public MQTT_Logic
          double setpointSent;  ///< Last setpoint sent to server.
          uint8_t stageOutSent; ///< Last output sent to server.
 
+         unsigned int lowValueCount; ///< How many times has we been under the setpoint?
+
          bool setStageOut(unsigned int stage, bool activate);
+         void incStageOut();
+
          bool calcOutput();
 
      public:
