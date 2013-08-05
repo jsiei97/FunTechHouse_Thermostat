@@ -30,6 +30,8 @@
 
 //Time until next stage kicks in
 #define LOW_VALUE_COUNT_MAX 180
+#define OUT_STRING_MAX_SIZE 100
+
 
 class Thermostat : public MQTT_Logic
 {
@@ -39,6 +41,7 @@ class Thermostat : public MQTT_Logic
          double value;     ///< Measured process value, i.e. temperature.
          double setpoint;  ///< Target value
          uint8_t stageOut; ///< Output state for the stages, bit0 is stage0, bit1 is stage1 etc etc.
+         char* outString;  ///< A reusable string for the output, so we minimize malloc usage.
 
          double valueSent;     ///< Last value sent to server.
          double setpointSent;  ///< Last setpoint sent to server.
@@ -50,6 +53,7 @@ class Thermostat : public MQTT_Logic
          void incStageOut();
 
          bool calcOutput();
+         unsigned int getOutValue();
 
      public:
          Thermostat(unsigned int stages);

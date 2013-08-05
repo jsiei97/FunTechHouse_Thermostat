@@ -42,6 +42,11 @@ class TestThermostat : public QObject
         void test_incStageOut();
 
         void test_valueTimeToSend();
+        void test_getValueString();
+        void test_getValueString_data();
+
+        void test_getOutValue();
+        void test_getOutValue_data();
 };
 
 
@@ -177,7 +182,6 @@ void TestThermostat::test_valueTimeToSend()
     QCOMPARE(thermostat.getStageOut(1), false);
     QCOMPARE(thermostat.getStageOut(2), false);
 
-    /// @todo Check string here
     thermostat.valueIsSent();
 
     //Value higher than setpoint and we turn off.
@@ -196,7 +200,6 @@ void TestThermostat::test_valueTimeToSend()
     QCOMPARE(thermostat.getStageOut(1), false);
     QCOMPARE(thermostat.getStageOut(2), false);
 
-    /// @todo Check string here
     thermostat.valueIsSent();
 
     //Above was 1 low value count
@@ -215,7 +218,6 @@ void TestThermostat::test_valueTimeToSend()
     QCOMPARE(thermostat.getStageOut(1), true);
     QCOMPARE(thermostat.getStageOut(2), false);
 
-    /// @todo Check string here
     thermostat.valueIsSent();
 
     //And then stop 1 before..
@@ -234,7 +236,6 @@ void TestThermostat::test_valueTimeToSend()
     QCOMPARE(thermostat.getStageOut(2), true);
 
 
-    /// @todo Check string here
     thermostat.valueIsSent();
 
     //Value higher than setpoint and we turn off.
@@ -242,8 +243,79 @@ void TestThermostat::test_valueTimeToSend()
     QCOMPARE(thermostat.getStageOut(0), false);
     QCOMPARE(thermostat.getStageOut(1), false);
     QCOMPARE(thermostat.getStageOut(2), false);
+}
 
-    /// @todo Check string here
+
+void TestThermostat::test_getValueString_data()
+{
+    QTest::addColumn<QString>("valueString");
+    QTest::addColumn<double>("temperature");
+    QTest::addColumn<double>("setpoint");
+    QTest::addColumn<unsigned int>("stageCount");
+    QTest::addColumn<unsigned int>("out"); ///< 0..100%
+
+    QTest::newRow("Test")
+        << "value=20.00 ; setpoint=40.00 ; output=100%"
+        << 20.0 << 40.0 << (unsigned int)1 << (unsigned int)100;
+
+    QTest::newRow("Test")
+        << "value=60.04 ; setpoint=39.50 ; output=000%"
+        << 60.04 << 39.5 << (unsigned int)1 << (unsigned int)0;
+}
+
+void TestThermostat::test_getValueString()
+{
+    QFETCH(QString, valueString);
+    QFETCH(double, temperature);
+    QFETCH(double, setpoint);
+    QFETCH(unsigned int, stageCount);
+    QFETCH(unsigned int, out);
+
+    Thermostat thermostat(stageCount);
+    thermostat.setSetpoint(setpoint);
+    thermostat.valueTimeToSend(temperature);
+
+    QString result(thermostat.getValueString());
+    //qDebug() << valueString << result;
+    QCOMPARE(valueString, result);
+}
+
+
+void TestThermostat::test_getOutValue_data()
+{
+    QTest::addColumn<uint8_t>("outStages");
+    QTest::addColumn<unsigned int>("stageCount");
+    QTest::addColumn<unsigned int>("out"); ///< 0..100%
+
+    QTest::newRow("Test") << (uint8_t)0x0 << (unsigned int)4 << (unsigned int)0;
+    QTest::newRow("Test") << (uint8_t)0x1 << (unsigned int)4 << (unsigned int)25;
+    QTest::newRow("Test") << (uint8_t)0x3 << (unsigned int)4 << (unsigned int)50;
+    QTest::newRow("Test") << (uint8_t)0x7 << (unsigned int)4 << (unsigned int)75;
+    QTest::newRow("Test") << (uint8_t)0xF << (unsigned int)4 << (unsigned int)100;
+
+    QTest::newRow("Test") << (uint8_t)0x0 << (unsigned int)3 << (unsigned int)0;
+    QTest::newRow("Test") << (uint8_t)0x1 << (unsigned int)3 << (unsigned int)33;
+    QTest::newRow("Test") << (uint8_t)0x3 << (unsigned int)3 << (unsigned int)66;
+    QTest::newRow("Test") << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)100;
+
+    QTest::newRow("Test") << (uint8_t)0x0 << (unsigned int)2 << (unsigned int)0;
+    QTest::newRow("Test") << (uint8_t)0x1 << (unsigned int)2 << (unsigned int)50;
+    QTest::newRow("Test") << (uint8_t)0x3 << (unsigned int)2 << (unsigned int)100;
+
+    QTest::newRow("Test") << (uint8_t)0x0 << (unsigned int)1 << (unsigned int)0;
+    QTest::newRow("Test") << (uint8_t)0x1 << (unsigned int)1 << (unsigned int)100;
+}
+
+void TestThermostat::test_getOutValue()
+{
+    QFETCH(uint8_t, outStages);
+    QFETCH(unsigned int, stageCount);
+    QFETCH(unsigned int, out);
+
+    Thermostat thermostat(stageCount);
+    thermostat.stageOut = outStages;
+
+    QCOMPARE(out, thermostat.getOutValue());
 }
 
 QTEST_MAIN(TestThermostat)

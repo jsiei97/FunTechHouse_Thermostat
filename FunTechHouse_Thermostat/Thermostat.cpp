@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "Thermostat.h"
+#include "StringHelp.h"
 
 /**
  * The default constructor.
@@ -38,7 +39,7 @@ Thermostat::Thermostat(unsigned int stageCount)
     stageOut = 0;
 
     //Some defaults.
-    value = 0;   
+    value = 0;
     setpoint = 60.0;
 
     valueSent    = 0;
@@ -46,6 +47,7 @@ Thermostat::Thermostat(unsigned int stageCount)
     stageOutSent = 0;
 
     lowValueCount = 0;
+    outString = (char*)malloc(sizeof(char)*(OUT_STRING_MAX_SIZE+1));
 };
 
 unsigned int Thermostat::getStageCount()
@@ -150,29 +152,65 @@ bool Thermostat::valueTimeToSend(double value)
 
     if(stageOut != stageOutSent)
         timeToSend = true;
-    
+
     return timeToSend;
 }
 
 /**
- * If it is time to send data, 
+ * If it is time to send data,
  * this functions prepares the string that should be sent to the server.
  *
  * @return char* to the string
  */
 char* Thermostat::getValueString()
 {
-    /// @todo snprintf("value= setpoint= out=0..100%",...)
-    return NULL;
+    int vI, vD;
+    int sI, sD;
+
+    StringHelp::splitDouble(value, &vI, &vD);
+    StringHelp::splitDouble(setpoint, &sI, &sD);
+
+    snprintf(outString, OUT_STRING_MAX_SIZE,
+            "value=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
+            vI, vD,
+            sI, sD, getOutValue());
+    return outString;
 }
 
 /**
- * If we could send the package to the server, 
+ * If we could send the package to the server,
  * then call this function since that will reset the internal counters.
  */
 void Thermostat::valueIsSent()
 {
-    valueSent    = value; 
+    valueSent    = value;
     setpointSent = setpoint;
     stageOutSent = stageOut;
+}
+
+/**
+ * Convert the output to a human readable procent number (0..100%)
+ *
+ * @return number between 0 and 100, where 100 is max.
+ */
+unsigned int Thermostat::getOutValue()
+{
+    unsigned int out = 0;
+    //stages
+    //stageOut
+    //stOut*100/stages=>out
+
+    unsigned int steps = 0;
+    while(steps<stages)
+    {
+        if(!getStageOut(steps))
+        {
+            break;
+        }
+        steps++;
+    }
+
+    out = ((steps*100.0)/stages);
+
+    return out;
 }
