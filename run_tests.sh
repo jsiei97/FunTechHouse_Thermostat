@@ -3,6 +3,8 @@
 echo "Build and run all the tests"
 echo
 
+result=0
+
 for testcode in `find test -name *.pro`
 do
     dir=$(dirname $testcode)
@@ -18,9 +20,11 @@ do
     fi
 
     qmake || exit 11
-    make || exit 12
-    ./$file || echo "\n\n FAIL \n\n"
+    make -j`getconf _NPROCESSORS_ONLN` || exit 12
+    ./$file || result=1 ; echo "\n\n FAIL \n\n"
     make distclean
     popd
     echo
 done
+
+exit $result
