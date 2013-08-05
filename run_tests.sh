@@ -21,7 +21,17 @@ do
 
     qmake || exit 11
     make -j`getconf _NPROCESSORS_ONLN` || exit 12
-    ./$file || result=1 ; echo "\n\n FAIL \n\n"
+    ./$file 
+    if [ ! "$?" == "0" ]
+    then 
+        result=1
+        echo ""
+        echo "*************************************************************"
+        echo "*** FAIL $PWD"
+        echo "*************************************************************"
+        echo ""
+        echo ""
+    fi
     make distclean
     popd
     echo
