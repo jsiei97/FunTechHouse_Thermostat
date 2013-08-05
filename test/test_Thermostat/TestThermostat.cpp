@@ -42,6 +42,8 @@ class TestThermostat : public QObject
         void test_incStageOut();
 
         void test_valueTimeToSend();
+        void test_checkSetpoint();
+
         void test_getValueString();
         void test_getValueString_data();
 
@@ -172,7 +174,7 @@ void TestThermostat::test_valueTimeToSend()
 {
     Thermostat thermostat(3);
 
-    thermostat.setSetpoint(50.0);
+    thermostat.setSetpoint(50.0, 0.0);
     QCOMPARE(thermostat.getSetpoint() , 50.0);
     thermostat.valueIsSent();
 
@@ -204,7 +206,7 @@ void TestThermostat::test_valueTimeToSend()
 
     //Above was 1 low value count
     //And then stop 1 before..
-    for(int step=0; step<(LOW_VALUE_COUNT_MAX-1-1); step++)
+    for(int step=0; step<(LOW_VALUE_COUNT_MAX-1); step++)
     {
         //qDebug() << "step" << step;
         QCOMPARE(thermostat.valueTimeToSend(40.0), false);
@@ -246,6 +248,78 @@ void TestThermostat::test_valueTimeToSend()
 }
 
 
+/**
+ * Test the setpoint hysteresis is working.
+ * Walk the value up and down and look at the output.
+ */
+void TestThermostat::test_checkSetpoint()
+{
+    Thermostat thermostat(1);
+    double value;
+
+    thermostat.setSetpoint(50.0, 5.0);
+    QCOMPARE(thermostat.getSetpoint() , 50.0);
+    thermostat.valueIsSent();
+
+    //Check that it is on all the up to the setpoint.
+    value = 40.0;
+    while(value < 50.0)
+    {
+        thermostat.valueTimeToSend(value);
+        if(true != thermostat.getStageOut(0))
+        {
+            qDebug() << "FAIL keep on 1" << value;
+            QFAIL("FAIL");
+        }
+        value++;
+    }
+
+    thermostat.valueTimeToSend(value);
+    if(false != thermostat.getStageOut(0))
+    {
+        qDebug() << "FAIL turn off 1" << value;
+        QFAIL("FAIL");
+    }
+
+    value = 55.0;
+    while(value >= 45.0)
+    {
+        thermostat.valueTimeToSend(value);
+        if(false != thermostat.getStageOut(0))
+        {
+            qDebug() << "FAIL keep off" << value;
+            QFAIL("FAIL");
+        }
+        value--;
+    }
+
+    thermostat.valueTimeToSend(value);
+    if(true != thermostat.getStageOut(0))
+    {
+        qDebug() << "FAIL turn on 2" << value;
+        QFAIL("FAIL");
+    }
+
+    while(value < 50.0)
+    {
+        thermostat.valueTimeToSend(value);
+        if(true != thermostat.getStageOut(0))
+        {
+            qDebug() << "FAIL keep on 1" << value;
+            QFAIL("FAIL");
+        }
+        value++;
+    }
+
+    thermostat.valueTimeToSend(value);
+    if(false != thermostat.getStageOut(0))
+    {
+        qDebug() << "FAIL turn off 1" << value;
+        QFAIL("FAIL");
+    }
+}
+
+
 void TestThermostat::test_getValueString_data()
 {
     QTest::addColumn<QString>("valueString");
@@ -272,7 +346,7 @@ void TestThermostat::test_getValueString()
     QFETCH(unsigned int, out);
 
     Thermostat thermostat(stageCount);
-    thermostat.setSetpoint(setpoint);
+    thermostat.setSetpoint(setpoint, 0.0);
     thermostat.valueTimeToSend(temperature);
 
     QString result(thermostat.getValueString());

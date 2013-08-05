@@ -45,6 +45,7 @@ Thermostat::Thermostat(unsigned int stageCount)
     valueSent    = 0;
     setpointSent = 0;
     stageOutSent = 0;
+    setpointHyst = 5;
 
     lowValueCount = 0;
     outString = (char*)malloc(sizeof(char)*(OUT_STRING_MAX_SIZE+1));
@@ -99,9 +100,10 @@ double Thermostat::getSetpoint()
     return setpoint;
 
 }
-void Thermostat::setSetpoint(double setpoint)
+void Thermostat::setSetpoint(double setpoint, double hysteresis)
 {
     this->setpoint = setpoint;
+    setpointHyst = hysteresis;
 }
 
 
@@ -112,26 +114,39 @@ void Thermostat::setSetpoint(double setpoint)
  */
 bool Thermostat::calcOutput()
 {
-    if(value < setpoint)
+    if(0 == stageOut)
     {
-        //Turn on the output
-        lowValueCount++;
-
-        if(lowValueCount % LOW_VALUE_COUNT_MAX == 0)
+        //We are in turned off mode and waiting for temperature to drop.
+        if(value < (setpoint-setpointHyst))
         {
-            //Enable next step
+            //Value is lover than hyst, time to turn on.
             incStageOut();
         }
-
-        setStageOut(0, true);
     }
     else
     {
-        //Turn off the output
-        lowValueCount = 0;
+        //We are turned on and waiting for temperature to rise.
+        lowValueCount++;
 
-        //setStageOut(0, false);
-        stageOut = 0x0;
+        if(value < setpoint)
+        {
+            //We are still low
+            if(lowValueCount % LOW_VALUE_COUNT_MAX == 0)
+            {
+                //Since we are still under the setpoint,
+                //let's active the next step.
+                incStageOut();
+            }
+        }
+        else
+        {
+            //We are higher than setpoint,
+            //time to turn off the output.
+
+            lowValueCount = 0;
+            //setStageOut(0, false);
+            stageOut = 0x0;
+        }
     }
     return true;
 }

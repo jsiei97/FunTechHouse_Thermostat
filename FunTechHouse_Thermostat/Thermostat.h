@@ -47,6 +47,8 @@ class Thermostat : public MQTT_Logic
          double setpointSent;  ///< Last setpoint sent to server.
          uint8_t stageOutSent; ///< Last output sent to server.
 
+         double setpointHyst; ///< Must fall with this much before we active again.
+
          unsigned int lowValueCount; ///< How many times has we been under the setpoint?
 
          bool setStageOut(unsigned int stage, bool activate);
@@ -60,7 +62,7 @@ class Thermostat : public MQTT_Logic
          unsigned int getStageCount();
          bool getStageOut(unsigned int stage);
 
-         void setSetpoint(double setpoint);
+         void setSetpoint(double setpoint, double hysteresis);
          double getSetpoint();
 
          bool valueTimeToSend(double value);
