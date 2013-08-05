@@ -47,6 +47,9 @@ Thermostat::Thermostat(unsigned int stageCount)
     stageOutSent = 0;
     setpointHyst = 5;
 
+    valueDiffMax = 0.8;
+    valueSendCnt = 0;
+
     lowValueCount = 0;
     outString = (char*)malloc(sizeof(char)*(OUT_STRING_MAX_SIZE+1));
 };
@@ -159,7 +162,11 @@ bool Thermostat::valueTimeToSend(double value)
 
     calcOutput();
 
-    if(value != valueSent)
+    if(0 >= valueSendCnt)
+        timeToSend = true;
+
+    double diff = value-valueSent;
+    if( diff > valueDiffMax || -diff > valueDiffMax )
         timeToSend = true;
 
     if(setpoint != setpointSent)
@@ -168,6 +175,7 @@ bool Thermostat::valueTimeToSend(double value)
     if(stageOut != stageOutSent)
         timeToSend = true;
 
+    valueSendCnt--;
     return timeToSend;
 }
 
@@ -198,6 +206,8 @@ char* Thermostat::getValueString()
  */
 void Thermostat::valueIsSent()
 {
+    valueSendCnt = ALWAYS_SEND_CNT;
+
     valueSent    = value;
     setpointSent = setpoint;
     stageOutSent = stageOut;
@@ -211,11 +221,8 @@ void Thermostat::valueIsSent()
 unsigned int Thermostat::getOutValue()
 {
     unsigned int out = 0;
-    //stages
-    //stageOut
-    //stOut*100/stages=>out
-
     unsigned int steps = 0;
+
     while(steps<stages)
     {
         if(!getStageOut(steps))

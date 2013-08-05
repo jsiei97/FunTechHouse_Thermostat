@@ -245,6 +245,34 @@ void TestThermostat::test_valueTimeToSend()
     QCOMPARE(thermostat.getStageOut(0), false);
     QCOMPARE(thermostat.getStageOut(1), false);
     QCOMPARE(thermostat.getStageOut(2), false);
+
+
+    //Then we have the same data, 
+    //and see that we timeout and send anyway!
+    thermostat.valueIsSent();
+    for(int i=1; i<=ALWAYS_SEND_CNT; i++)
+    {
+        if(thermostat.valueTimeToSend(60.0))
+        {
+            qDebug() << "Error we should not send now" << i;
+            QFAIL("Error valueSendCnt wrong");
+        }
+    }
+    QCOMPARE(thermostat.valueTimeToSend(60.0), true);
+
+
+    //Check that value diff is correct, both for bigger and smaller values.
+    thermostat.valueIsSent();
+    thermostat.valueDiffMax = 1.0;
+    QCOMPARE(thermostat.valueTimeToSend(60.0), false);
+    QCOMPARE(thermostat.valueTimeToSend(59.5), false);
+    QCOMPARE(thermostat.valueTimeToSend(58.5), true);
+
+    QCOMPARE(thermostat.valueTimeToSend(50.0), true);
+    thermostat.valueIsSent();
+    QCOMPARE(thermostat.valueTimeToSend(50.5), false);
+    QCOMPARE(thermostat.valueTimeToSend(51.5), true);
+
 }
 
 

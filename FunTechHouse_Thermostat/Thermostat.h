@@ -30,8 +30,14 @@
 
 //Time until next stage kicks in
 #define LOW_VALUE_COUNT_MAX 180
+
 #define OUT_STRING_MAX_SIZE 100
 
+// If value is the "same" for "cnt" questions, then send anyway.
+// If sleep is 1s (1000ms) and there is 1 question per rotation
+// then we have 600/1s=600s or always send every 10min
+// 1200/1s/60s=20min
+#define ALWAYS_SEND_CNT 1200
 
 class Thermostat : public MQTT_Logic
 {
@@ -50,6 +56,9 @@ class Thermostat : public MQTT_Logic
          double setpointHyst; ///< Must fall with this much before we active again.
 
          unsigned int lowValueCount; ///< How many times has we been under the setpoint?
+
+         double valueDiffMax; ///< Value should diff more than this to be sent to the server
+         int    valueSendCnt; ///< Always send after "cnt time" even if there is no change
 
          bool setStageOut(unsigned int stage, bool activate);
          void incStageOut();
