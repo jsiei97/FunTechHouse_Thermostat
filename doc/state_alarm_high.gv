@@ -1,0 +1,16 @@
+digraph finite_state_machine {
+    rankdir=LR;
+    size="8,5"
+ 
+    node [shape = circle, label="NotActive"     ] NA;
+    node [shape = circle, label="ActiveNotSent" ] AN;
+    node [shape = circle, label="ActiveSent"    ] AS;
+ 
+    node [shape = point ]; qi
+    qi -> NA;
+ 
+    NA -> AN [ label = "value > setpoint + level" ];
+    AN -> AS [ label = "isSent" ];
+    AS -> NA [ label = "value < setpoint" ];
+    AN -> NA [ label = "value < setpoint" ];
+}

@@ -50,7 +50,21 @@ typedef enum
     ALARM_NOT_ACTIVE
 } AlarmStates;
 
-
+ 
+/**
+ * A thermostat with multi stage output.
+ *
+ * If the value is to low, it activates the output.
+ * If the value is to high, it deactives the output.
+ * After some time if the value has not rised enought, 
+ * the second output stage will be actived.
+ *
+ * It also has two alarm functions that will notify you if the 
+ * process has failed in some way.
+ * 
+ * @dotfile state_alarm_low.gv The alarm low state machine
+ * @dotfile state_alarm_high.gv The alarm high state machine
+ */
 class Thermostat : public MQTT_Logic
 {
      private:
