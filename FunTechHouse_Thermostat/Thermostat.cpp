@@ -52,6 +52,12 @@ Thermostat::Thermostat(unsigned int stageCount)
 
     lowValueCount = 0;
     outString = (char*)malloc(sizeof(char)*(OUT_STRING_MAX_SIZE+1));
+
+    alarmLowActive = true;
+    alarmLevelLow = 10.0;
+
+    alarmLow  = ALARM_NOT_ACTIVE;
+    alarmHigh = ALARM_NOT_ACTIVE;
 };
 
 unsigned int Thermostat::getStageCount()
@@ -109,6 +115,20 @@ void Thermostat::setSetpoint(double setpoint, double hysteresis)
     setpointHyst = hysteresis;
 }
 
+void Thermostat::setValueDiff(double valueDiffMax)
+{
+    this->valueDiffMax = valueDiffMax;
+}
+void Thermostat::setAlarmLevels(
+        bool activateLowAlarm, double alarmLevelLow, 
+        bool activateHighAlarm, double alarmLevelHigh)
+{
+    alarmLowActive = activateLowAlarm;
+    this->alarmLevelLow = alarmLevelLow;
+
+    alarmHighActive = activateHighAlarm;
+    this->alarmLevelHigh = alarmLevelHigh;
+}
 
 /**
  * Calculate the new output.
@@ -235,4 +255,116 @@ unsigned int Thermostat::getOutValue()
     out = ((steps*100.0)/stages);
 
     return out;
+}
+
+/**
+ * Delay when we allow the first alarm to be activated, 
+ * so the controlled system has time to init.
+ *
+ * @return true when we allow alarms to be sent
+ */
+bool Thermostat::allowAlarm()
+{
+    static unsigned int firstAlarm = FIRST_ALARM_ALLOWED;
+    if(firstAlarm != 0)
+    {
+        firstAlarm--;
+        return false;
+    }
+    return true;
+}
+
+bool Thermostat::alarmLowTimeToSend()
+{
+    if(!allowAlarm())
+        return false;
+
+    if(!alarmLowActive)
+        return false;
+
+    bool status = false;
+
+    switch ( alarmLow )
+    {
+        case ALARM_NOT_ACTIVE:
+            if( (value < (setpoint-alarmLevelLow)) && (getStageOut(stages-1)) )
+            {
+                alarmLow = ALARM_ACTIVE_NOT_SENT;
+                status = true;
+            }
+            break;
+        case ALARM_ACTIVE_SENT:
+            if( value > setpoint )
+            {
+                alarmLow = ALARM_NOT_ACTIVE;
+            }
+            break;
+        case ALARM_ACTIVE_NOT_SENT:
+            if( value > setpoint )
+            {
+                alarmLow = ALARM_NOT_ACTIVE;
+            }
+            else
+            {
+                status = true;
+            }
+            break;
+    }
+    return status;
+}
+
+bool Thermostat::alarmHighTimeToSend()
+{
+    if(!allowAlarm())
+        return false;
+
+    bool status = false;
+    return status;
+}
+
+/**
+ * Returns a alarm low string that can be sent 
+ * to the server.
+ * This functions must only be called if alarmLowTimeToSend retured true.
+ *
+ * @return char* with the low alarm string
+ */
+char* Thermostat::getAlarmLowString()
+{
+    int vI, vD;
+    int sI, sD;
+    int aI, aD;
+
+    StringHelp::splitDouble(value, &vI, &vD);
+    StringHelp::splitDouble(setpoint, &sI, &sD);
+    StringHelp::splitDouble((setpoint-alarmLevelLow), &aI, &aD);
+
+    snprintf(outString, OUT_STRING_MAX_SIZE,
+            "Alarm Low ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
+            vI, vD,
+            aI, aD,
+            sI, sD, 
+            getOutValue());
+    return outString;
+}
+
+char* Thermostat::getAlarmHighString()
+{
+    return NULL;
+}
+
+void Thermostat::alarmLowIsSent()
+{
+    switch ( alarmLow )
+    {
+        case ALARM_ACTIVE_NOT_SENT:
+            alarmLow = ALARM_ACTIVE_SENT;
+            break;
+    }
+    return;
+}
+
+void Thermostat::alarmHighIsSent()
+{
+    return;
 }

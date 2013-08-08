@@ -39,6 +39,18 @@
 // 1200/1s/60s=20min
 #define ALWAYS_SEND_CNT 1200
 
+//Do not send any alarms at startup
+//wait for the process to start as well.
+#define FIRST_ALARM_ALLOWED 600
+
+typedef enum
+{
+    ALARM_ACTIVE_SENT = 0, 
+    ALARM_ACTIVE_NOT_SENT,
+    ALARM_NOT_ACTIVE
+} AlarmStates;
+
+
 class Thermostat : public MQTT_Logic
 {
      private:
@@ -60,9 +72,18 @@ class Thermostat : public MQTT_Logic
          double valueDiffMax; ///< Value should diff more than this to be sent to the server
          int    valueSendCnt; ///< Always send after "cnt time" even if there is no change
 
+         bool alarmLowActive; ///< Is low alarm active? if false then low alarm is off
+         double alarmLevelLow;///< Alarm level, setpoint-alarmLevelLow=>alarm
+         AlarmStates alarmLow;///< The low alarm statemachine.
+
+         bool alarmHighActive; ///< Is high alarm active? if false then high alarm is off
+         double alarmLevelHigh;///< Alarm level, setpoint+alarmLevelHigh=>alarm
+         AlarmStates alarmHigh;//< The high alarm statemachine
+
          bool setStageOut(unsigned int stage, bool activate);
          void incStageOut();
 
+         bool allowAlarm();
          bool calcOutput();
          unsigned int getOutValue();
 
@@ -72,11 +93,22 @@ class Thermostat : public MQTT_Logic
          bool getStageOut(unsigned int stage);
 
          void setSetpoint(double setpoint, double hysteresis);
+         void setValueDiff(double valueDiffMax);
+         void setAlarmLevels(bool activateLowAlarm, double alarmLevelLow, 
+                 bool activateHighAlarm, double alarmLevelHigh);
          double getSetpoint();
 
-         bool valueTimeToSend(double value);
+         bool  valueTimeToSend(double value);
          char* getValueString();
-         void valueIsSent();
+         void  valueIsSent();
+
+         bool  alarmLowTimeToSend();
+         char* getAlarmLowString();
+         void  alarmLowIsSent();
+
+         bool  alarmHighTimeToSend();
+         char* getAlarmHighString();
+         void  alarmHighIsSent();
 };
 
 #endif  // __THERMOSTAT_H

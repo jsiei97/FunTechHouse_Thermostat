@@ -49,6 +49,9 @@ class TestThermostat : public QObject
 
         void test_getOutValue();
         void test_getOutValue_data();
+
+        void test_alarmLowTimeToSend();
+        //void alarmLowIsSent();
 };
 
 
@@ -419,6 +422,105 @@ void TestThermostat::test_getOutValue()
 
     QCOMPARE(out, thermostat.getOutValue());
 }
+
+
+void TestThermostat::test_alarmLowTimeToSend()
+{
+    Thermostat thermostat(1);
+
+    double value = 20.0;
+    double setpoint = 40.0;
+    thermostat.setSetpoint(setpoint, 0.0);
+    thermostat.valueTimeToSend(value);
+
+    QCOMPARE(thermostat.alarmLowTimeToSend(), false);
+
+    for(int i=0; i<(FIRST_ALARM_ALLOWED-1); i++)
+    {
+        thermostat.valueTimeToSend(value);
+        if(thermostat.alarmLowTimeToSend())
+        {
+            qDebug() << "Error: to early for alarmLow"<< i;
+            QFAIL("FAIL");
+        }
+    }
+
+    //PRINT_DATA();
+    QCOMPARE(thermostat.alarmLowTimeToSend(), true);
+    thermostat.alarmLowIsSent();
+
+    //Now the alarm is active
+    //Let's rise the value until it stops.
+    while(value < setpoint+5)
+    {
+        thermostat.valueTimeToSend(value);
+        if(false != thermostat.alarmLowTimeToSend())
+        {
+            //PRINT_DATA();
+            qDebug() << "Already sent, so not more" << value << setpoint;;
+            QFAIL("FAIL");
+        }
+        value++;
+    }
+
+    //PRINT_DATA();
+    while(!thermostat.alarmLowTimeToSend())
+    {
+        value--;
+        thermostat.valueTimeToSend(value);
+    }
+
+    if(value > (setpoint-thermostat.alarmLevelLow))
+    {
+        qDebug() << "Alarm triggered to early" << value << setpoint;
+        QFAIL("FAIL");
+    }
+
+    //PRINT_DATA();
+    QVERIFY(thermostat.alarmLowTimeToSend());
+
+    
+    QString alarmStr1 = QString("Alarm Low ; value=%1 ; alarm=%2 ; setpoint=%3 ; output=100%")
+        .arg(value, 0, 'f', 2)
+        .arg((setpoint-thermostat.alarmLevelLow), 0, 'f', 2)
+        .arg(setpoint, 0, 'f', 2);
+
+    QString alarmStr2(thermostat.getAlarmLowString());
+    //qDebug() << alarmStr1;
+    //qDebug() << alarmStr2;
+    QCOMPARE(alarmStr1, alarmStr2);
+
+
+    //Marked as sent, so no more this time...
+    thermostat.alarmLowIsSent();
+    QVERIFY(!thermostat.alarmLowTimeToSend());
+
+    thermostat.valueTimeToSend(35.0);          //Less than 40
+    QVERIFY(!thermostat.alarmLowTimeToSend()); // So still no
+
+    thermostat.valueTimeToSend(45.0);         //Above 40
+    QVERIFY(!thermostat.alarmLowTimeToSend());// No, but reset internally
+
+    thermostat.valueTimeToSend(25.0);         //Less than 40-10
+    QVERIFY(thermostat.alarmLowTimeToSend()); //=> alarm
+
+    //Test to disable
+    thermostat.setSetpoint(40.0, 0.0);
+    thermostat.setAlarmLevels(false, 10.0, false, 10.0);
+    thermostat.valueTimeToSend(60.0);
+    QVERIFY(!thermostat.alarmLowTimeToSend());
+    thermostat.valueTimeToSend(10.0);
+    QVERIFY(!thermostat.alarmLowTimeToSend());
+    thermostat.valueTimeToSend(60.0);
+    QVERIFY(!thermostat.alarmLowTimeToSend());
+
+    //Test to enable
+    thermostat.setAlarmLevels(true, 10.0, false, 10.0);
+    thermostat.valueTimeToSend(10.0);
+    QVERIFY(thermostat.alarmLowTimeToSend());
+}
+
+
 
 QTEST_MAIN(TestThermostat)
 #include "TestThermostat.moc"
