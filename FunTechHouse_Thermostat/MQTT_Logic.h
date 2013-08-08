@@ -26,9 +26,9 @@
 
 class MQTT_Logic
 {
-    public:
-
     protected:
+
+    private: 
         char* topicIn; ///< MQTT topic for data from the server
         char* topicOut;///< MQTT topic for data to the server
 

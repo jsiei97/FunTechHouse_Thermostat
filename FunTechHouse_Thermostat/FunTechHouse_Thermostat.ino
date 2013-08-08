@@ -1,29 +1,62 @@
+/**
+ * @file FunTechHouse_Thermostat.ino
+ * @author Johan Simonsson  
+ * @brief Main file
+ */
+
+/*
+ * Copyright (C) 2013 Johan Simonsson
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <SPI.h>
 #include <Ethernet.h>
 #include "PubSubClient.h"
+#include "Thermostat.h"
 
 // Update these with values suitable for your network.
 byte mac[]    = {  0xDE, 0xED, 0xBA, 0xFE, 0xFE, 0x03 };
-byte ip[]     = { 192, 168, 0, 33 };
-byte server[] = { 192, 168, 0, 64 };
 
+// The MQTT device name, this must be unique
 char project_name[]  = "FunTechHouse_Thermostat";
-char topic_in[]  = "FunTechHouse/Room1/ThermostatData"; ///< data from the server
-char topic_out[] = "FunTechHouse/Room1/Thermostat";     ///< data to the server
 
-PubSubClient client(server, 1883, callback);
+Thermostat thermostat(3);
 
-volatile double setpoint = 35; 
-volatile int    actuator = 0;
-
+PubSubClient client("mosqhub", 1883, callback);
 
 //The relay is connected to this pin
+/// @todo What gpio to use?
 int gpio_out  = 12;
 
 void callback(char* topic, byte* payload, unsigned int length) 
 {
     // handle message arrived
-    client.publish(topic_out, "echo...");
+    //client.publish(topic_out, "echo...");
+}
+
+
+void configure()
+{
+    //Config the thermostat
+    thermostat.setSetpoint(60.0, 5.0); //55..60
+    thermostat.setValueDiff(1.0);
+    thermostat.setAlarmLevels(true, 15., true, 10.0);
+    thermostat.setTopic(
+            "FunTechHouse/Room1/ThermostatData",
+            "FunTechHouse/Room1/Thermostat"
+            );
 }
 
 void setup()
@@ -31,11 +64,15 @@ void setup()
     analogReference(EXTERNAL); //3.3V
     pinMode(gpio_out, OUTPUT);
 
-    Ethernet.begin(mac, ip);
+    //Configure this project.
+    configure();
+
+    //Start ethernet, if no ip is given then dhcp is used.
+    Ethernet.begin(mac);
     if (client.connect(project_name)) 
     {
-        client.publish(topic_out, "#Hello world");
-        client.subscribe(topic_in);
+        client.publish( thermostat.getTopicPublish(), "#Hello world" );
+        client.subscribe( thermostat.getTopicSubscribe() );
     }
 }
 
@@ -46,38 +83,56 @@ void loop()
     temperature /= 1024.0;               // ADC resolution
     temperature *= 100;                  // 10mV/C (0.01V/C)
 
-    if(client.loop() == false)
+    if(false == client.loop())
+    {
+        client.connect(project_name);
+    }
+    if(false == client.connected())
     {
         client.connect(project_name);
     }
 
-    //todo +- 2deg hyst.
-    if(temperature < setpoint)
+
+    if( thermostat.valueTimeToSend(temperature) )
     {
-        //Since the temperature is to low, 
-        //enable the relay so we get more heat.
+        if(client.publish(
+                    thermostat.getTopicPublish(), 
+                    thermostat.getValueString()))
+        {
+            thermostat.valueIsSent();
+        }
+    }
+
+    if( thermostat.alarmLowTimeToSend() )
+    {
+        if(client.publish(
+                    thermostat.getTopicPublish(), 
+                    thermostat.getAlarmLowString()))
+        {
+            thermostat.alarmLowIsSent();
+        }
+    }
+
+    if( thermostat.alarmHighTimeToSend() )
+    {
+        if(client.publish(
+                    thermostat.getTopicPublish(), 
+                    thermostat.getAlarmHighString()))
+        {
+            thermostat.alarmHighIsSent();
+        }
+    }
+
+    if(thermostat.getStageOut(0))
+    {
         digitalWrite(gpio_out, HIGH);
-        actuator = 100;
     }
     else
     {
-        //Since the temperature is to high, 
-        //disable the relay so we turn off the heat.
         digitalWrite(gpio_out, LOW);
-        actuator = 0;
     }
+    /// @todo Fix stage all 3 stages
 
-    char str[80];
-    int temp_hel = (int)(temperature);
-    int temp_del = (int)((temperature-temp_hel)*10);
 
-    // Add setpoint to string
-    snprintf(str, 80, "temperature=%d.%d ; raw=%04d ; actuator=%d", temp_hel, temp_del, reading, actuator);
-
-    if(client.connected())
-    {
-        client.publish(topic_out, str);
-    }
-
-    delay(5000); 
+    delay(1000);
 }
