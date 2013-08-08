@@ -108,11 +108,6 @@ bool Thermostat::setStageOut(unsigned int stage, bool activate)
     return true;
 }
 
-double Thermostat::getSetpoint()
-{
-    return setpoint;
-
-}
 void Thermostat::setSetpoint(double setpoint, double hysteresis)
 {
     this->setpoint = setpoint;

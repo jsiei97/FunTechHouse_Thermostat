@@ -111,7 +111,6 @@ class Thermostat : public MQTT_Logic
          void setValueDiff(double valueDiffMax);
          void setAlarmLevels(bool activateLowAlarm, double alarmLevelLow, 
                  bool activateHighAlarm, double alarmLevelHigh);
-         double getSetpoint();
 
          bool  valueTimeToSend(double value);
          char* getValueString();

@@ -178,7 +178,6 @@ void TestThermostat::test_valueTimeToSend()
     Thermostat thermostat(3);
 
     thermostat.setSetpoint(50.0, 0.0);
-    QCOMPARE(thermostat.getSetpoint() , 50.0);
     thermostat.valueIsSent();
 
     //Value lower than setpoint, should turn on the output.
@@ -289,7 +288,6 @@ void TestThermostat::test_checkSetpoint()
     double value;
 
     thermostat.setSetpoint(50.0, 5.0);
-    QCOMPARE(thermostat.getSetpoint() , 50.0);
     thermostat.valueIsSent();
 
     //Check that it is on all the up to the setpoint.
