@@ -83,6 +83,7 @@ class Thermostat : public MQTT_Logic
          bool setStageOut(unsigned int stage, bool activate);
          void incStageOut();
 
+         unsigned int firstAlarm; ///< Countdown timer so we dont sent the first alarms to early.
          bool allowAlarm();
          bool calcOutput();
          unsigned int getOutValue();

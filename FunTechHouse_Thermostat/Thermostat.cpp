@@ -53,8 +53,12 @@ Thermostat::Thermostat(unsigned int stageCount)
     lowValueCount = 0;
     outString = (char*)malloc(sizeof(char)*(OUT_STRING_MAX_SIZE+1));
 
-    alarmLowActive = true;
+    firstAlarm = FIRST_ALARM_ALLOWED;
+
+    alarmLowActive = false;
     alarmLevelLow = 10.0;
+    alarmHighActive = false;
+    alarmLevelHigh = 10.0;
 
     alarmLow  = ALARM_NOT_ACTIVE;
     alarmHigh = ALARM_NOT_ACTIVE;
@@ -265,7 +269,6 @@ unsigned int Thermostat::getOutValue()
  */
 bool Thermostat::allowAlarm()
 {
-    static unsigned int firstAlarm = FIRST_ALARM_ALLOWED;
     if(firstAlarm != 0)
     {
         firstAlarm--;
@@ -318,7 +321,38 @@ bool Thermostat::alarmHighTimeToSend()
     if(!allowAlarm())
         return false;
 
+    if(!alarmHighActive)
+        return false;
+
     bool status = false;
+
+    switch ( alarmHigh )
+    {
+        case ALARM_NOT_ACTIVE:
+            //if( (value > (setpoint+alarmLevelLow)) && (!getStageOut(0)) )
+            if( (value > (setpoint+alarmLevelLow)) )
+            {
+                alarmHigh = ALARM_ACTIVE_NOT_SENT;
+                status = true;
+            }
+            break;
+        case ALARM_ACTIVE_SENT:
+            if( value < setpoint )
+            {
+                alarmHigh = ALARM_NOT_ACTIVE;
+            }
+            break;
+        case ALARM_ACTIVE_NOT_SENT:
+            if( value < setpoint )
+            {
+                alarmHigh = ALARM_NOT_ACTIVE;
+            }
+            else
+            {
+                status = true;
+            }
+            break;
+    }
     return status;
 }
 
@@ -350,7 +384,21 @@ char* Thermostat::getAlarmLowString()
 
 char* Thermostat::getAlarmHighString()
 {
-    return NULL;
+    int vI, vD;
+    int sI, sD;
+    int aI, aD;
+
+    StringHelp::splitDouble(value, &vI, &vD);
+    StringHelp::splitDouble(setpoint, &sI, &sD);
+    StringHelp::splitDouble((setpoint+alarmLevelHigh), &aI, &aD);
+
+    snprintf(outString, OUT_STRING_MAX_SIZE,
+            "Alarm High ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
+            vI, vD,
+            aI, aD,
+            sI, sD, 
+            getOutValue());
+    return outString;
 }
 
 void Thermostat::alarmLowIsSent()
@@ -361,10 +409,14 @@ void Thermostat::alarmLowIsSent()
             alarmLow = ALARM_ACTIVE_SENT;
             break;
     }
-    return;
 }
 
 void Thermostat::alarmHighIsSent()
 {
-    return;
+    switch ( alarmHigh )
+    {
+        case ALARM_ACTIVE_NOT_SENT:
+            alarmHigh = ALARM_ACTIVE_SENT;
+            break;
+    }
 }
