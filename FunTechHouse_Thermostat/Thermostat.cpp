@@ -167,6 +167,9 @@ void Thermostat::setValueDiff(double valueDiffMax)
  * Please note that the levels is relative to the setpoint.
  * Values 10 and 10, and a setpoint at 50 will give alarm levels at 40 (50-10) and 60 (50+10).
  *
+ * Please note that it is a good idea to put alarmLevelLow under setpoint-hyst, 
+ * since that is the normal "low point" for the system.
+ *
  * @param activateLowAlarm true to activate low alarm
  * @param alarmLevelLow how much lower than setpoint shall the level be?
  * @param activateHighAlarm true to active high alarm
@@ -197,6 +200,9 @@ bool Thermostat::calcOutput()
         {
             //Value is lover than hyst, time to turn on.
             incStageOut();
+
+            //Reset the counter so we get a correct count the second time.
+            lowValueCount = 0;
         }
     }
     else
