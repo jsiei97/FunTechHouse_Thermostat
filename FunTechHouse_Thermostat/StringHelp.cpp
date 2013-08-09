@@ -33,9 +33,9 @@
  * so you may need to fill with zero when it is printed.
  * i.e. 4.04 will return 4 and 4, and 5.2 will return 5 and 20.
  *
- * @param value[in] The value to split
- * @param integer[out] The integer part that will be returned
- * @param decimal[out] The decimal part that will be returned
+ * @param value [in] The value to split
+ * @param integer [out] The integer part that will be returned
+ * @param decimal [out] The decimal part that will be returned
  */
 void StringHelp::splitDouble(double value, int* integer, int* decimal)
 {

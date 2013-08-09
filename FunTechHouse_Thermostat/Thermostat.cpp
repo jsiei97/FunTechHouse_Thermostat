@@ -64,11 +64,22 @@ Thermostat::Thermostat(unsigned int stageCount)
     alarmHigh = ALARM_NOT_ACTIVE;
 };
 
+/**
+ * How many output stages is used by this thermostat?
+ *
+ * @return unsigned int valid values goes from 1..n, 0 is valid but pointless.
+ */
 unsigned int Thermostat::getStageCount()
 {
     return stages;
 }
 
+/**
+ * If this state is active or not?
+ *
+ * @param stage the output stage number from 0..n
+ * @return true if active and false if not active.
+ */
 bool Thermostat::getStageOut(unsigned int stage)
 {
     if(stage >= stages)
@@ -89,6 +100,14 @@ void Thermostat::incStageOut()
     /// @todo Do not inc more than max stages
 }
 
+/**
+ * Change state of any given output stage.
+ * Please note that automation will not stop just becaurse the output has changed, 
+ * so the output value will be overritten when the system needs it to.
+ *
+ * @param stage the stage to change
+ * @param activate true will turn the output on, false will turn it off.
+ */
 bool Thermostat::setStageOut(unsigned int stage, bool activate)
 {
     if(stage >= stages)
@@ -108,16 +127,51 @@ bool Thermostat::setStageOut(unsigned int stage, bool activate)
     return true;
 }
 
+/**
+ * Setpoint to work with.
+ *
+ * Please note that there is a deadzone
+ * between setpoint and setpoint-hysteresis.
+ *
+ * The hysteresis value will prevent a lot of fast output toggle
+ * that will burn high power devices and relays.
+ *
+ * @param setpoint the target value
+ * @param hysteresis value must fall lower that setpoint-hysteresis for it to activated.
+ */
 void Thermostat::setSetpoint(double setpoint, double hysteresis)
 {
     this->setpoint = setpoint;
     setpointHyst = hysteresis;
 }
 
+/**
+ * How much must the value diff from last sent value before it is time to send again?
+ *
+ * If valueDiffMax is 2.0 and last value sent to server was 20.0, 
+ * then the new value must be higher than 22 (20+2) or lower than 18 (20-2)
+ * before we send a new value.
+ *
+ * This will minimize the amount of duplicated data on the server.
+ *
+ * @param valueDiffMax diff, i.e. 2 will send if 
+ */
 void Thermostat::setValueDiff(double valueDiffMax)
 {
     this->valueDiffMax = valueDiffMax;
 }
+
+/**
+ * Shall the alarm be active and what level should be used.
+ *
+ * Please note that the levels is relative to the setpoint.
+ * Values 10 and 10, and a setpoint at 50 will give alarm levels at 40 (50-10) and 60 (50+10).
+ *
+ * @param activateLowAlarm true to activate low alarm
+ * @param alarmLevelLow how much lower than setpoint shall the level be?
+ * @param activateHighAlarm true to active high alarm
+ * @param alarmLevelHigh how much higher than the setpoint shall the level be?
+ */
 void Thermostat::setAlarmLevels(
         bool activateLowAlarm, double alarmLevelLow, 
         bool activateHighAlarm, double alarmLevelHigh)
@@ -173,6 +227,15 @@ bool Thermostat::calcOutput()
     return true;
 }
 
+/**
+ * Shall we send data to the server?
+ *
+ * Please note that the value entered here, 
+ * will trigger the calculation of outputs and alarms.
+ *
+ * @param value the new value used to calculate output
+ * @return bool true if there is data to send, false if there is only old data.
+ */
 bool Thermostat::valueTimeToSend(double value)
 {
     bool timeToSend = false;
@@ -272,6 +335,11 @@ bool Thermostat::allowAlarm()
     return true;
 }
 
+/**
+ * Is there a low alarm that should be sent to the server?
+ *
+ * @return true if there is a alarm, false if all is fine.
+ */
 bool Thermostat::alarmLowTimeToSend()
 {
     if(!allowAlarm())
@@ -311,6 +379,11 @@ bool Thermostat::alarmLowTimeToSend()
     return status;
 }
 
+/**
+ * Is there a high alarm that should be sent to the server?
+ *
+ * @return true if there is a alarm, false if all is fine.
+ */
 bool Thermostat::alarmHighTimeToSend()
 {
     if(!allowAlarm())
@@ -377,6 +450,13 @@ char* Thermostat::getAlarmLowString()
     return outString;
 }
 
+/**
+ * Returns a alarm high string that can be sent to the server.
+ *
+ * This functions must only be called if alarmHighTimeToSend retured true.
+ *
+ * @return char* with the high alarm string
+ */
 char* Thermostat::getAlarmHighString()
 {
     int vI, vD;
@@ -396,6 +476,9 @@ char* Thermostat::getAlarmHighString()
     return outString;
 }
 
+/**
+ * Tell the logic that the alarm low was sucessfully sent to the server so it can be marked as sent.
+ */
 void Thermostat::alarmLowIsSent()
 {
     switch ( alarmLow )
@@ -406,6 +489,9 @@ void Thermostat::alarmLowIsSent()
     }
 }
 
+/**
+ * Tell the logic that the alarm high was sucessfully sent to the server so it can be marked as sent.
+ */
 void Thermostat::alarmHighIsSent()
 {
     switch ( alarmHigh )

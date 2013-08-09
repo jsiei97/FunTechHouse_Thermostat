@@ -28,26 +28,38 @@
 
 #include "MQTT_Logic.h"
 
-//Time until next stage kicks in
+/**
+ * Time until next stage kicks in
+ */
 #define LOW_VALUE_COUNT_MAX 180
 
+/**
+ * Max size for the internal string buffer
+ */
 #define OUT_STRING_MAX_SIZE 100
 
-// If value is the "same" for "cnt" questions, then send anyway.
-// If sleep is 1s (1000ms) and there is 1 question per rotation
-// then we have 600/1s=600s or always send every 10min
-// 1200/1s/60s=20min
+/**
+ * If value is the "same" for "cnt" questions, then send anyway.
+ *
+ * If sleep is 1s (1000ms) and there is 1 question per rotation
+ * then we have 600/1s=600s or always send every 10min
+ * 1200/1s/60s=20min
+ */
 #define ALWAYS_SEND_CNT 1200
 
-//Do not send any alarms at startup
-//wait for the process to start as well.
+/**
+ * Do not send any alarms at startup wait for the process to start as well.
+ */
 #define FIRST_ALARM_ALLOWED 600
 
+/**
+ * The statemachine for the alarm
+ */
 typedef enum
 {
-    ALARM_ACTIVE_SENT = 0, 
-    ALARM_ACTIVE_NOT_SENT,
-    ALARM_NOT_ACTIVE
+    ALARM_ACTIVE_SENT = 0, ///< The alarm is triggered, and has been sent to the server.
+    ALARM_ACTIVE_NOT_SENT, ///< The alarm is triggered, but has not sent to the server.
+    ALARM_NOT_ACTIVE       ///< The alarm is not triggered, all is fine.
 } AlarmStates;
 
  

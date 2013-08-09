@@ -24,6 +24,9 @@
 #ifndef  __STRINGHELP_H
 #define  __STRINGHELP_H
 
+/**
+ * String helper functions
+ */
 class StringHelp
 {
     private:

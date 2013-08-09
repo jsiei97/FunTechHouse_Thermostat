@@ -59,16 +59,32 @@ bool MQTT_Logic::setTopic(char* topicSubscribe, char* topicPublish)
     return true;
 }
 
+/**
+ * Get the stored subscribe topic 
+ *
+ * @return the stored string
+ */
 char* MQTT_Logic::getTopicSubscribe()
 {
     return topicIn;
 }
 
+/**
+ * Get the stored publish topic 
+ *
+ * @return the stored string
+ */
 char* MQTT_Logic::getTopicPublish()
 {
     return topicOut;
 }
 
+/**
+ * Is this topic the same as the stored one?
+ *
+ * @param check [in] string to compare with the 
+ * @return true if same, false if not the same.
+ */
 bool MQTT_Logic::checkTopicSubscribe(char* check)
 {
     bool res = false;

@@ -24,6 +24,9 @@
 #ifndef  __MQTT_LOGIC_H
 #define  __MQTT_LOGIC_H
 
+/**
+ * The MQTT logic functions that can be inherited.
+ */
 class MQTT_Logic
 {
     protected:
