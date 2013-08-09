@@ -1,6 +1,6 @@
 /**
  * @file FunTechHouse_Thermostat.ino
- * @author Johan Simonsson  
+ * @author Johan Simonsson
  * @brief Main file
  */
 
@@ -36,11 +36,12 @@ Thermostat thermostat(3);
 
 PubSubClient client("mosqhub", 1883, callback);
 
-//The relay is connected to this pin
-/// @todo What gpio to use?
-int gpio_out  = 12;
+//The stage out relays is connected to:
+int gpioStage0  = 2;
+int gpioStage1  = 3;
+int gpioStage2  = 5;
 
-void callback(char* topic, byte* payload, unsigned int length) 
+void callback(char* topic, byte* payload, unsigned int length)
 {
     // handle message arrived
     //client.publish(topic_out, "echo...");
@@ -62,14 +63,16 @@ void configure()
 void setup()
 {
     analogReference(EXTERNAL); //3.3V
-    pinMode(gpio_out, OUTPUT);
+    pinMode(gpioStage0, OUTPUT);
+    pinMode(gpioStage1, OUTPUT);
+    pinMode(gpioStage2, OUTPUT);
 
     //Configure this project.
     configure();
 
     //Start ethernet, if no ip is given then dhcp is used.
     Ethernet.begin(mac);
-    if (client.connect(project_name)) 
+    if (client.connect(project_name))
     {
         client.publish( thermostat.getTopicPublish(), "#Hello world" );
         client.subscribe( thermostat.getTopicSubscribe() );
@@ -78,8 +81,8 @@ void setup()
 
 void loop()
 {
-    int reading = analogRead(A2);
-    double temperature = reading * 3.30; // 3.3V Aref 
+    int reading = analogRead(A0);
+    double temperature = reading * 3.30; // 3.3V Aref
     temperature /= 1024.0;               // ADC resolution
     temperature *= 100;                  // 10mV/C (0.01V/C)
 
@@ -96,7 +99,7 @@ void loop()
     if( thermostat.valueTimeToSend(temperature) )
     {
         if(client.publish(
-                    thermostat.getTopicPublish(), 
+                    thermostat.getTopicPublish(),
                     thermostat.getValueString()))
         {
             thermostat.valueIsSent();
@@ -106,7 +109,7 @@ void loop()
     if( thermostat.alarmLowTimeToSend() )
     {
         if(client.publish(
-                    thermostat.getTopicPublish(), 
+                    thermostat.getTopicPublish(),
                     thermostat.getAlarmLowString()))
         {
             thermostat.alarmLowIsSent();
@@ -116,7 +119,7 @@ void loop()
     if( thermostat.alarmHighTimeToSend() )
     {
         if(client.publish(
-                    thermostat.getTopicPublish(), 
+                    thermostat.getTopicPublish(),
                     thermostat.getAlarmHighString()))
         {
             thermostat.alarmHighIsSent();
@@ -125,13 +128,30 @@ void loop()
 
     if(thermostat.getStageOut(0))
     {
-        digitalWrite(gpio_out, HIGH);
+        digitalWrite(gpioStage0, HIGH);
     }
     else
     {
-        digitalWrite(gpio_out, LOW);
+        digitalWrite(gpioStage0, LOW);
     }
-    /// @todo Fix stage all 3 stages
+
+    if(thermostat.getStageOut(1))
+    {
+        digitalWrite(gpioStage1, HIGH);
+    }
+    else
+    {
+        digitalWrite(gpioStage1, LOW);
+    }
+
+    if(thermostat.getStageOut(2))
+    {
+        digitalWrite(gpioStage2, HIGH);
+    }
+    else
+    {
+        digitalWrite(gpioStage2, LOW);
+    }
 
 
     delay(1000);
