@@ -33,10 +33,11 @@
  *
  * @param stageCount how many output stages to use
  */
-Thermostat::Thermostat(unsigned int stageCount)
+Thermostat::Thermostat(unsigned int stageCount, ThermostatType type)
 {
     stages = stageCount;
     stageOut = 0;
+    this->type = type;
 
     //Some defaults.
     value = 0;
@@ -62,6 +63,8 @@ Thermostat::Thermostat(unsigned int stageCount)
 
     alarmLow  = ALARM_NOT_ACTIVE;
     alarmHigh = ALARM_NOT_ACTIVE;
+
+    maxOutValue = ((1 << stages)-1);
 };
 
 /**
@@ -94,36 +97,57 @@ bool Thermostat::getStageOut(unsigned int stage)
  */
 void Thermostat::incStageOut()
 {
-    stageOut <<= 1;
-    stageOut |= 0x1;
-
-    /// @todo Do not inc more than max stages
+    if(stageOut < maxOutValue)
+    {
+        switch ( type )
+        {
+            case THERMOSTAT_TYPE_LINEAR:
+                stageOut <<= 1;
+                stageOut |= 0x1;
+                break;
+            case THERMOSTAT_TYPE_BIN_CNT:
+                stageOut++; 
+                break;
+            default :
+                break;
+        }
+    }
 }
 
 /**
- * Change state of any given output stage.
- * Please note that automation will not stop just becaurse the output has changed, 
- * so the output value will be overritten when the system needs it to.
+ * Is the output 100%
  *
- * @param stage the stage to change
- * @param activate true will turn the output on, false will turn it off.
+ * @return true if output is 100%, false if there is more to give.
  */
-bool Thermostat::setStageOut(unsigned int stage, bool activate)
+bool Thermostat::isOutMax()
 {
-    if(stage >= stages)
+    if(stageOut >= maxOutValue)
+    {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Set the maximum allows value for the outputs.
+ *
+ * Example with THERMOSTAT_TYPE_BIN_CNT with 3 stages connected to a 
+ * electric heater where stage 1 is 2kW, stage 2 is 4kW and stage3 is 9kW.
+ * And this heater can produce 2+4+9=15kW, but it is only connected to fuses that allows 10kW.
+ * Then a maxValue at 0x4 (bin 100), will allows it to step throu stages that reprecent 
+ * 0kW, 2kW, 4kW, 6kW (2+4) and 9kW, but block the higher 11kW (9+2) and higher that would blow the fuse.
+ *
+ * @param maxValue is the new max value.
+ * @return true if ok, false is probably a value bigger that the value spec by the stage count.
+ */
+bool Thermostat::setOutMax(uint8_t maxValue)
+{
+    if(maxValue > ((1 << stages)-1))
+    {
         return false;
-
-    if(activate)
-    {
-        stageOut |= (1 << stage);
-    }
-    else
-    {
-        uint8_t mask = 0xFF;
-        mask ^= (1 << stage);
-        stageOut &= mask;
     }
 
+    this->maxOutValue = maxValue;
     return true;
 }
 
@@ -311,16 +335,26 @@ unsigned int Thermostat::getOutValue()
     unsigned int out = 0;
     unsigned int steps = 0;
 
-    while(steps<stages)
+    switch ( type )
     {
-        if(!getStageOut(steps))
-        {
+        case THERMOSTAT_TYPE_LINEAR:
+            while(steps<stages)
+            {
+                if(!getStageOut(steps))
+                {
+                    break;
+                }
+                steps++;
+            }
+            /// @todo Use maxOutValue;
+            out = ((steps*100.0)/stages);
             break;
-        }
-        steps++;
+        case THERMOSTAT_TYPE_BIN_CNT:
+            out = (stageOut*100) / maxOutValue;
+            break;
+        default :
+            break;
     }
-
-    out = ((steps*100.0)/stages);
 
     return out;
 }

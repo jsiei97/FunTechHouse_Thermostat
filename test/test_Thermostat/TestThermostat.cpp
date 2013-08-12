@@ -37,9 +37,12 @@ class TestThermostat : public QObject
         void test_getStageCount();
         void test_getStageCount_data();
 
-        void test_getStageOut();
-        void test_setStageOut();
+        void test_getStageOut3();
+        void test_getStageOut3_data();
+
         void test_incStageOut();
+        void test_incStageOutCnt();
+        void test_incStageOutCnt_data();
 
         void test_valueTimeToSend();
         void test_checkSetpoint();
@@ -66,10 +69,16 @@ qDebug() << "output  :" << thermostat.stageOut << "sent:" << thermostat.stageOut
 void TestThermostat::test_getStageCount_data()
 {
     QTest::addColumn<int>("value");
+    QTest::addColumn<unsigned int>("type");
 
-    for(int i=0; i<6; i++)
+    for(int i=0; i<7; i++)
     {
-        QTest::newRow("value") <<  i;
+        QTest::newRow("value") <<  i << (unsigned int)THERMOSTAT_TYPE_LINEAR ;
+    }
+
+    for(int i=0; i<7; i++)
+    {
+        QTest::newRow("value") <<  i << (unsigned int)THERMOSTAT_TYPE_BIN_CNT;
     }
 
 };
@@ -77,79 +86,100 @@ void TestThermostat::test_getStageCount_data()
 void TestThermostat::test_getStageCount()
 {
     QFETCH(int, value);
+    QFETCH(unsigned int, type);
 
-    Thermostat thermostat(value);
+    Thermostat thermostat(value, (ThermostatType)type);
     int stageCount = thermostat.getStageCount();
     QCOMPARE(stageCount, value);
 };
 
-void TestThermostat::test_getStageOut()
+void TestThermostat::test_getStageOut3_data()
 {
-    Thermostat thermostat(3); // Stage: 0,1,2
+    QTest::addColumn<unsigned int>("type");
+    QTest::addColumn<unsigned int>("stageCount");
+    QTest::addColumn<uint8_t>("stageOut");
+    QTest::addColumn<bool>("stage2");
+    QTest::addColumn<bool>("stage1");
+    QTest::addColumn<bool>("stage0");
 
-    thermostat.stageOut = 0x1;
-    QCOMPARE(thermostat.getStageOut(0), true);
-    QCOMPARE(thermostat.getStageOut(1), false);
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)3 << (uint8_t)0x7 << true << true << true;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)3 << (uint8_t)0x7 << true << true << true;
+    
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)3 << (uint8_t)0x4 << true << false << false;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)3 << (uint8_t)0x4 << true << false << false;
 
-    thermostat.stageOut = 0x2;
-    QCOMPARE(thermostat.getStageOut(0), false);
-    QCOMPARE(thermostat.getStageOut(1), true);
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)3 << (uint8_t)0x3 << false << true << true;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)3 << (uint8_t)0x3 << false << true << true;
 
-    thermostat.stageOut = 0x3;
-    QCOMPARE(thermostat.getStageOut(0), true);
-    QCOMPARE(thermostat.getStageOut(1), true);
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)3 << (uint8_t)0x1 << false << false << true;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)3 << (uint8_t)0x1 << false << false << true;
 
-    thermostat.stageOut = 0x4;
-    QCOMPARE(thermostat.getStageOut(0), false);
-    QCOMPARE(thermostat.getStageOut(1), false);
-    QCOMPARE(thermostat.getStageOut(2), true);
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)3 << (uint8_t)0xF << true << true << true;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)3 << (uint8_t)0xF << true << true << true;
+}
+void TestThermostat::test_getStageOut3()
+{
+    QFETCH(unsigned int, stageCount);
+    QFETCH(unsigned int, type);
+    QFETCH(uint8_t, stageOut);
+    QFETCH(bool, stage2);
+    QFETCH(bool, stage1);
+    QFETCH(bool, stage0);
 
-    thermostat.stageOut = 0x7;
-    QCOMPARE(thermostat.getStageOut(0), true);
-    QCOMPARE(thermostat.getStageOut(1), true);
-    QCOMPARE(thermostat.getStageOut(2), true);
+    Thermostat thermostat(stageCount, (ThermostatType)type);
+    thermostat.stageOut = stageOut;
+    QCOMPARE(thermostat.getStageOut(0), stage0);
+    QCOMPARE(thermostat.getStageOut(1), stage1);
+    QCOMPARE(thermostat.getStageOut(2), stage2);
 
     //stageCount is 3, so deny the fourth
-    thermostat.stageOut = 0xF;
     QCOMPARE(thermostat.getStageOut(3), false);
-    QCOMPARE(thermostat.getStageOut(4), false);
-
-    QCOMPARE(thermostat.getStageOut(0), true);
-    QCOMPARE(thermostat.getStageOut(1), true);
-    QCOMPARE(thermostat.getStageOut(2), true);
-
+    QCOMPARE(thermostat.getStageOut(3), false);
 }
 
-void TestThermostat::test_setStageOut()
+void TestThermostat::test_incStageOutCnt_data()
 {
-    Thermostat thermostat(4); // Stage: 0,1,2,3
+    QTest::addColumn<unsigned int>("type");
+    QTest::addColumn<unsigned int>("stageCount");
+    QTest::addColumn<uint8_t>("outMax");
+    QTest::addColumn<unsigned int>("incCnt"); 
 
-    QCOMPARE(thermostat.stageOut , (uint8_t)0x0);
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)3 << (uint8_t)0x7 <<(unsigned int)3;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)3 << (uint8_t)0x7 <<(unsigned int)7;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)3 << (uint8_t)0x4 <<(unsigned int)3;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)3 << (uint8_t)0x4 <<(unsigned int)4;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)3 << (uint8_t)0x3 <<(unsigned int)2;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)3 << (uint8_t)0x3 <<(unsigned int)3;
 
-    QVERIFY(thermostat.setStageOut(0, true));
-    QCOMPARE(thermostat.stageOut , (uint8_t)0x1);
-    QVERIFY(thermostat.setStageOut(0, false));
-    QCOMPARE(thermostat.stageOut , (uint8_t)0x0);
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)4 << (uint8_t)0x7 <<(unsigned int)3;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)4 << (uint8_t)0x7 <<(unsigned int)7;
 
-    QVERIFY(thermostat.setStageOut(0, true));
-    QVERIFY(thermostat.setStageOut(1, true));
-    QCOMPARE(thermostat.stageOut , (uint8_t)0x3);
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)4 << (uint8_t)0xF <<(unsigned int)4;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)4 << (uint8_t)0xF <<(unsigned int)0xF;
+}
+void TestThermostat::test_incStageOutCnt()
+{
+    QFETCH(unsigned int, type);
+    QFETCH(unsigned int, stageCount);
+    QFETCH(uint8_t, outMax);
+    QFETCH(unsigned int, incCnt);
 
-    QVERIFY(thermostat.setStageOut(0, false));
-    QCOMPARE(thermostat.stageOut , (uint8_t)0x2);
+    Thermostat thermostat(stageCount, (ThermostatType)type);
+    QVERIFY( thermostat.setOutMax( outMax ) );
 
-    QVERIFY(thermostat.setStageOut(0, false));
-    QCOMPARE(thermostat.stageOut , (uint8_t)0x2);
+    unsigned int cnt = 0;
+    do
+    {
+        thermostat.incStageOut();
+        cnt++;
+    }while(cnt < (stageCount+100) && !thermostat.isOutMax());
 
-    //Do not allow to active stage output for non active stages
-    thermostat.stageOut = 0x0;
-    QCOMPARE(thermostat.setStageOut(4, true), false);
-    QCOMPARE(thermostat.stageOut , (uint8_t)0x0);
+    QCOMPARE(cnt, incCnt);
 }
 
 void TestThermostat::test_incStageOut()
 {
-    Thermostat thermostat(4); // Stage: 0,1,2,3
+    Thermostat thermostat(3, THERMOSTAT_TYPE_LINEAR); // Stage: 0,1,2,3
 
     QCOMPARE(thermostat.stageOut , (uint8_t)0x0);
     thermostat.incStageOut();
@@ -160,22 +190,40 @@ void TestThermostat::test_incStageOut()
     QCOMPARE(thermostat.stageOut , (uint8_t)0x7);
 
     //No more inc since we maxed out the stages...
-    //thermostat.incStageOut();
-    //QCOMPARE(thermostat.stageOut , (uint8_t)0x7);
+    thermostat.incStageOut();
+    QCOMPARE(thermostat.stageOut , (uint8_t)0x7);
 
 
-    Thermostat th2(1);
+    Thermostat th2(1, THERMOSTAT_TYPE_LINEAR);
     QCOMPARE(th2.stageOut , (uint8_t)0x0);
     th2.incStageOut();
     QCOMPARE(th2.stageOut , (uint8_t)0x1);
-    //th2.incStageOut();
-    //QCOMPARE(th2.stageOut , (uint8_t)0x1);
+
+    //No more inc since we maxed out the stages...
+    th2.incStageOut();
+    QCOMPARE(th2.stageOut , (uint8_t)0x1);
+
+
+
+    Thermostat th3(2, THERMOSTAT_TYPE_BIN_CNT);
+    QCOMPARE(th3.stageOut , (uint8_t)0x0);
+    th3.incStageOut();
+    QCOMPARE(th3.stageOut , (uint8_t)0x1);
+    th3.incStageOut();
+    QCOMPARE(th3.stageOut , (uint8_t)0x2);
+    th3.incStageOut();
+    QCOMPARE(th3.stageOut , (uint8_t)0x3);
+
+    //No more inc since we maxed out the stages...
+    th3.incStageOut();
+    QCOMPARE(th3.stageOut , (uint8_t)0x3);
+
 
 }
 
 void TestThermostat::test_valueTimeToSend()
 {
-    Thermostat thermostat(3);
+    Thermostat thermostat(3, THERMOSTAT_TYPE_LINEAR);
 
     thermostat.setSetpoint(50.0, 0.0);
     thermostat.valueIsSent();
@@ -249,7 +297,7 @@ void TestThermostat::test_valueTimeToSend()
     QCOMPARE(thermostat.getStageOut(2), false);
 
 
-    //Then we have the same data, 
+    //Then we have the same data,
     //and see that we timeout and send anyway!
     thermostat.valueIsSent();
     for(int i=1; i<=ALWAYS_SEND_CNT; i++)
@@ -284,7 +332,7 @@ void TestThermostat::test_valueTimeToSend()
  */
 void TestThermostat::test_checkSetpoint()
 {
-    Thermostat thermostat(1);
+    Thermostat thermostat(1, THERMOSTAT_TYPE_LINEAR);
     double value;
 
     thermostat.setSetpoint(50.0, 5.0);
@@ -374,7 +422,7 @@ void TestThermostat::test_getValueString()
     QFETCH(unsigned int, stageCount);
     QFETCH(unsigned int, out);
 
-    Thermostat thermostat(stageCount);
+    Thermostat thermostat(stageCount, THERMOSTAT_TYPE_LINEAR);
     thermostat.setSetpoint(setpoint, 0.0);
     thermostat.valueTimeToSend(temperature);
 
@@ -386,45 +434,85 @@ void TestThermostat::test_getValueString()
 
 void TestThermostat::test_getOutValue_data()
 {
+    QTest::addColumn<unsigned int>("type");
     QTest::addColumn<uint8_t>("outStages");
+    QTest::addColumn<uint8_t>("outMax");
     QTest::addColumn<unsigned int>("stageCount");
     QTest::addColumn<unsigned int>("out"); ///< 0..100%
 
-    QTest::newRow("Test") << (uint8_t)0x0 << (unsigned int)4 << (unsigned int)0;
-    QTest::newRow("Test") << (uint8_t)0x1 << (unsigned int)4 << (unsigned int)25;
-    QTest::newRow("Test") << (uint8_t)0x3 << (unsigned int)4 << (unsigned int)50;
-    QTest::newRow("Test") << (uint8_t)0x7 << (unsigned int)4 << (unsigned int)75;
-    QTest::newRow("Test") << (uint8_t)0xF << (unsigned int)4 << (unsigned int)100;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x0 << (uint8_t)0xF << (unsigned int)4 << (unsigned int)0;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x1 << (uint8_t)0xF << (unsigned int)4 << (unsigned int)25;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x3 << (uint8_t)0xF << (unsigned int)4 << (unsigned int)50;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x7 << (uint8_t)0xF << (unsigned int)4 << (unsigned int)75;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0xF << (uint8_t)0xF << (unsigned int)4 << (unsigned int)100;
 
-    QTest::newRow("Test") << (uint8_t)0x0 << (unsigned int)3 << (unsigned int)0;
-    QTest::newRow("Test") << (uint8_t)0x1 << (unsigned int)3 << (unsigned int)33;
-    QTest::newRow("Test") << (uint8_t)0x3 << (unsigned int)3 << (unsigned int)66;
-    QTest::newRow("Test") << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)100;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x0 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)0;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x1 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)33;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x3 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)66;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x7 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)100;
 
-    QTest::newRow("Test") << (uint8_t)0x0 << (unsigned int)2 << (unsigned int)0;
-    QTest::newRow("Test") << (uint8_t)0x1 << (unsigned int)2 << (unsigned int)50;
-    QTest::newRow("Test") << (uint8_t)0x3 << (unsigned int)2 << (unsigned int)100;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x0 << (uint8_t)0x3 << (unsigned int)2 << (unsigned int)0;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x1 << (uint8_t)0x3 << (unsigned int)2 << (unsigned int)50;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x3 << (uint8_t)0x3 << (unsigned int)2 << (unsigned int)100;
 
-    QTest::newRow("Test") << (uint8_t)0x0 << (unsigned int)1 << (unsigned int)0;
-    QTest::newRow("Test") << (uint8_t)0x1 << (unsigned int)1 << (unsigned int)100;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x0 << (uint8_t)0x1 << (unsigned int)1 << (unsigned int)0;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR << (uint8_t)0x1 << (uint8_t)0x1 << (unsigned int)1 << (unsigned int)100;
+
+
+    // -----------------------------------
+    // -- Test: THERMOSTAT_TYPE_BIN_CNT
+    // -----------------------------------
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x0 << (uint8_t)0x1 << (unsigned int)1 << (unsigned int)0;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x1 << (uint8_t)0x1 << (unsigned int)1 << (unsigned int)100;
+
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x0 << (uint8_t)0x3 << (unsigned int)2 << (unsigned int)0;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x1 << (uint8_t)0x3 << (unsigned int)2 << (unsigned int)33;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x2 << (uint8_t)0x3 << (unsigned int)2 << (unsigned int)66;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x3 << (uint8_t)0x3 << (unsigned int)2 << (unsigned int)100;
+
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x0 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)0;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x1 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)14;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x2 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)28;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x3 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)42;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x4 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)57;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x5 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)71;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x6 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)85;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x7 << (uint8_t)0x7 << (unsigned int)3 << (unsigned int)100;
+
+
+    //Max value tests... 0x4 not 0x7
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x0 << (uint8_t)0x4 << (unsigned int)3 << (unsigned int)0;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x1 << (uint8_t)0x4 << (unsigned int)3 << (unsigned int)25;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x2 << (uint8_t)0x4 << (unsigned int)3 << (unsigned int)50;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x3 << (uint8_t)0x4 << (unsigned int)3 << (unsigned int)75;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x4 << (uint8_t)0x4 << (unsigned int)3 << (unsigned int)100;
+
+    //Max value tests... 0x3 not 0x7
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x0 << (uint8_t)0x3 << (unsigned int)3 << (unsigned int)0;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x1 << (uint8_t)0x3 << (unsigned int)3 << (unsigned int)33;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x2 << (uint8_t)0x3 << (unsigned int)3 << (unsigned int)66;
+    QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (uint8_t)0x3 << (uint8_t)0x3 << (unsigned int)3 << (unsigned int)100;
 }
 
 void TestThermostat::test_getOutValue()
 {
+    QFETCH(unsigned int, type);
     QFETCH(uint8_t, outStages);
+    QFETCH(uint8_t, outMax);
     QFETCH(unsigned int, stageCount);
     QFETCH(unsigned int, out);
 
-    Thermostat thermostat(stageCount);
+    Thermostat thermostat(stageCount, (ThermostatType)type);
     thermostat.stageOut = outStages;
 
-    QCOMPARE(out, thermostat.getOutValue());
+    QVERIFY( thermostat.setOutMax( outMax ) );
+    QCOMPARE(thermostat.getOutValue(), out);
 }
 
 
 void TestThermostat::test_alarmLowTimeToSend()
 {
-    Thermostat thermostat(1);
+    Thermostat thermostat(1, THERMOSTAT_TYPE_LINEAR);
 
     double value = 20.0;
     double setpoint = 40.0;
@@ -478,7 +566,7 @@ void TestThermostat::test_alarmLowTimeToSend()
     //PRINT_DATA();
     QVERIFY(thermostat.alarmLowTimeToSend());
 
-    
+
     QString alarmStr1 = QString("Alarm Low ; value=%1 ; alarm=%2 ; setpoint=%3 ; output=100%")
         .arg(value, 0, 'f', 2)
         .arg((setpoint-thermostat.alarmLevelLow), 0, 'f', 2)
@@ -523,7 +611,7 @@ void TestThermostat::test_alarmLowTimeToSend()
 
 void TestThermostat::test_alarmHighTimeToSend()
 {
-    Thermostat thermostat(1);
+    Thermostat thermostat(1, THERMOSTAT_TYPE_LINEAR);
 
     double value = 60.0;
     double setpoint = 40.0;
@@ -579,7 +667,7 @@ void TestThermostat::test_alarmHighTimeToSend()
     //PRINT_DATA();
     QVERIFY(thermostat.alarmHighTimeToSend());
 
-    
+
     QString alarmStr1 = QString("Alarm High ; value=%1 ; alarm=%2 ; setpoint=%3 ; output=000%")
         .arg(value, 0, 'f', 2)
         .arg((setpoint+thermostat.alarmLevelHigh), 0, 'f', 2)

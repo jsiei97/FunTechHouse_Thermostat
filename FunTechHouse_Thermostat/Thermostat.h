@@ -62,6 +62,15 @@ typedef enum
     ALARM_NOT_ACTIVE       ///< The alarm is not triggered, all is fine.
 } AlarmStates;
 
+/**
+ * What output type this thermostat is used.
+ */
+typedef enum
+{
+    THERMOSTAT_TYPE_LINEAR = 0, ///< Linear output, 3stages, 001, 011, 111
+    THERMOSTAT_TYPE_BIN_CNT     ///< Bin cnt output, 3stages, 001, 010, 011, 100, 101, 110, 111
+} ThermostatType;
+
  
 /**
  * A thermostat with multi stage output.
@@ -81,10 +90,12 @@ class Thermostat : public MQTT_Logic
 {
      private:
          unsigned int stages; ///< How many output stages does this thermostat have?
+         ThermostatType type; ///< What output type to use.
 
          double value;     ///< Measured process value, i.e. temperature.
          double setpoint;  ///< Target value
          uint8_t stageOut; ///< Output state for the stages, bit0 is stage0, bit1 is stage1 etc etc.
+         uint8_t maxOutValue; ///< Out not allowed to be bigger than this, more or less limit out to this.
          char* outString;  ///< A reusable string for the output, so we minimize malloc usage.
 
          double valueSent;     ///< Last value sent to server.
@@ -106,8 +117,9 @@ class Thermostat : public MQTT_Logic
          double alarmLevelHigh;///< Alarm level, setpoint+alarmLevelHigh=>alarm
          AlarmStates alarmHigh;//< The high alarm statemachine
 
-         bool setStageOut(unsigned int stage, bool activate);
          void incStageOut();
+         //void decStageOut();
+         bool isOutMax();
 
          unsigned int firstAlarm; ///< Countdown timer so we dont sent the first alarms to early.
          bool allowAlarm();
@@ -115,9 +127,11 @@ class Thermostat : public MQTT_Logic
          unsigned int getOutValue();
 
      public:
-         Thermostat(unsigned int stages);
+         Thermostat(unsigned int stages, ThermostatType type);
          unsigned int getStageCount();
          bool getStageOut(unsigned int stage);
+
+         bool setOutMax(uint8_t maxValue);
 
          void setSetpoint(double setpoint, double hysteresis);
          void setValueDiff(double valueDiffMax);
