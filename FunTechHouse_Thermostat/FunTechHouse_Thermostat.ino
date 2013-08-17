@@ -27,19 +27,19 @@
 #include "Thermostat.h"
 
 // Update these with values suitable for your network.
-byte mac[]    = {  0xDE, 0xED, 0xBA, 0xFE, 0xFE, 0x03 };
+byte mac[]    = {  0xDE, 0xED, 0xBA, 0xFE, 0xFE, 0x04 };
 
 // The MQTT device name, this must be unique
 char project_name[]  = "FunTechHouse_Thermostat";
 
-Thermostat thermostat(3);
+Thermostat thermostat(3, THERMOSTAT_TYPE_BIN_CNT);
 
 PubSubClient client("mosqhub", 1883, callback);
 
 //The stage out relays is connected to:
 int gpioStage0  = 2;
-int gpioStage1  = 3;
-int gpioStage2  = 5;
+int gpioStage1  = 5; //Upps built the hw with the gpio in the wrong order.
+int gpioStage2  = 3;
 
 void callback(char* topic, byte* payload, unsigned int length)
 {
@@ -53,16 +53,19 @@ void configure()
     //Config the thermostat
     thermostat.setSetpoint(60.0, 5.0); //55..60
     thermostat.setValueDiff(1.0);
-    thermostat.setAlarmLevels(true, 15., true, 10.0);
+    thermostat.setOutMax(0x4); // => 4~9kW, later 2~3kW
+    thermostat.setAlarmLevels(true, 15.0, true, 10.0); // 60-15=45 60+10=70
     thermostat.setTopic(
-            "FunTechHouse/Room1/ThermostatData",
-            "FunTechHouse/Room1/Thermostat"
+            "FunTechHouse/ElPanna_Data",
+            "FunTechHouse/ElPanna"
             );
 }
 
 void setup()
 {
-    analogReference(EXTERNAL); //3.3V
+    //INTERNAL: an built-in reference, equal to 1.1 volts on the ATmega168 or ATmega328
+    analogReference(INTERNAL); //1.1V
+
     pinMode(gpioStage0, OUTPUT);
     pinMode(gpioStage1, OUTPUT);
     pinMode(gpioStage2, OUTPUT);
@@ -82,7 +85,7 @@ void setup()
 void loop()
 {
     int reading = analogRead(A0);
-    double temperature = reading * 3.30; // 3.3V Aref
+    double temperature = reading * 1.10; // Internal 1.1V
     temperature /= 1024.0;               // ADC resolution
     temperature *= 100;                  // 10mV/C (0.01V/C)
 
@@ -96,6 +99,7 @@ void loop()
     }
 
 
+    //Part 1.1 - Update Thermostat with new value and check alarms
     if( thermostat.valueTimeToSend(temperature) )
     {
         if(client.publish(
@@ -126,6 +130,7 @@ void loop()
         }
     }
 
+    // Part 1.2 - Update the outputs with the latest data.
     if(thermostat.getStageOut(0))
     {
         digitalWrite(gpioStage0, HIGH);
@@ -152,6 +157,8 @@ void loop()
     {
         digitalWrite(gpioStage2, LOW);
     }
+
+    // Part 2.1 - Loop the misc sensors attached to this device.
 
 
     delay(1000);
