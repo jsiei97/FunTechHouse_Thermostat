@@ -106,7 +106,7 @@ void Thermostat::incStageOut()
                 stageOut |= 0x1;
                 break;
             case THERMOSTAT_TYPE_BIN_CNT:
-                stageOut++; 
+                stageOut++;
                 break;
             default :
                 break;
@@ -131,10 +131,10 @@ bool Thermostat::isOutMax()
 /**
  * Set the maximum allows value for the outputs.
  *
- * Example with THERMOSTAT_TYPE_BIN_CNT with 3 stages connected to a 
+ * Example with THERMOSTAT_TYPE_BIN_CNT with 3 stages connected to a
  * electric heater where stage 1 is 2kW, stage 2 is 4kW and stage3 is 9kW.
  * And this heater can produce 2+4+9=15kW, but it is only connected to fuses that allows 10kW.
- * Then a maxValue at 0x4 (bin 100), will allows it to step throu stages that reprecent 
+ * Then a maxValue at 0x4 (bin 100), will allows it to step throu stages that reprecent
  * 0kW, 2kW, 4kW, 6kW (2+4) and 9kW, but block the higher 11kW (9+2) and higher that would blow the fuse.
  *
  * @param maxValue is the new max value.
@@ -172,13 +172,13 @@ void Thermostat::setSetpoint(double setpoint, double hysteresis)
 /**
  * How much must the value diff from last sent value before it is time to send again?
  *
- * If valueDiffMax is 2.0 and last value sent to server was 20.0, 
+ * If valueDiffMax is 2.0 and last value sent to server was 20.0,
  * then the new value must be higher than 22 (20+2) or lower than 18 (20-2)
  * before we send a new value.
  *
  * This will minimize the amount of duplicated data on the server.
  *
- * @param valueDiffMax diff, i.e. 2 will send if 
+ * @param valueDiffMax diff, i.e. 2 will send if
  */
 void Thermostat::setValueDiff(double valueDiffMax)
 {
@@ -191,7 +191,7 @@ void Thermostat::setValueDiff(double valueDiffMax)
  * Please note that the levels is relative to the setpoint.
  * Values 10 and 10, and a setpoint at 50 will give alarm levels at 40 (50-10) and 60 (50+10).
  *
- * Please note that it is a good idea to put alarmLevelLow under setpoint-hyst, 
+ * Please note that it is a good idea to put alarmLevelLow under setpoint-hyst,
  * since that is the normal "low point" for the system.
  *
  * @param activateLowAlarm true to activate low alarm
@@ -200,7 +200,7 @@ void Thermostat::setValueDiff(double valueDiffMax)
  * @param alarmLevelHigh how much higher than the setpoint shall the level be?
  */
 void Thermostat::setAlarmLevels(
-        bool activateLowAlarm, double alarmLevelLow, 
+        bool activateLowAlarm, double alarmLevelLow,
         bool activateHighAlarm, double alarmLevelHigh)
 {
     alarmLowActive = activateLowAlarm;
@@ -260,7 +260,7 @@ bool Thermostat::calcOutput()
 /**
  * Shall we send data to the server?
  *
- * Please note that the value entered here, 
+ * Please note that the value entered here,
  * will trigger the calculation of outputs and alarms.
  *
  * @param value the new value used to calculate output
@@ -360,7 +360,7 @@ unsigned int Thermostat::getOutValue()
 }
 
 /**
- * Delay when we allow the first alarm to be activated, 
+ * Delay when we allow the first alarm to be activated,
  * so the controlled system has time to init.
  *
  * @return true when we allow alarms to be sent
@@ -465,7 +465,7 @@ bool Thermostat::alarmHighTimeToSend()
 }
 
 /**
- * Returns a alarm low string that can be sent 
+ * Returns a alarm low string that can be sent
  * to the server.
  * This functions must only be called if alarmLowTimeToSend retured true.
  *
@@ -485,7 +485,7 @@ char* Thermostat::getAlarmLowString()
             "Alarm Low ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
             vI, vD,
             aI, aD,
-            sI, sD, 
+            sI, sD,
             getOutValue());
     return outString;
 }
@@ -511,7 +511,7 @@ char* Thermostat::getAlarmHighString()
             "Alarm High ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
             vI, vD,
             aI, aD,
-            sI, sD, 
+            sI, sD,
             getOutValue());
     return outString;
 }

@@ -71,18 +71,18 @@ typedef enum
     THERMOSTAT_TYPE_BIN_CNT     ///< Bin cnt output, 3stages, 001, 010, 011, 100, 101, 110, 111
 } ThermostatType;
 
- 
+
 /**
  * A thermostat with multi stage output.
  *
  * If the value is to low, it activates the output.
  * If the value is to high, it deactives the output.
- * After some time if the value has not rised enought, 
+ * After some time if the value has not rised enought,
  * the second output stage will be actived.
  *
- * It also has two alarm functions that will notify you if the 
+ * It also has two alarm functions that will notify you if the
  * process has failed in some way.
- * 
+ *
  * @dotfile state_alarm_low.gv The alarm low state machine
  * @dotfile state_alarm_high.gv The alarm high state machine
  */
@@ -135,7 +135,7 @@ class Thermostat : public MQTT_Logic
 
          void setSetpoint(double setpoint, double hysteresis);
          void setValueDiff(double valueDiffMax);
-         void setAlarmLevels(bool activateLowAlarm, double alarmLevelLow, 
+         void setAlarmLevels(bool activateLowAlarm, double alarmLevelLow,
                  bool activateHighAlarm, double alarmLevelHigh);
 
          bool  valueTimeToSend(double value);
@@ -149,6 +149,10 @@ class Thermostat : public MQTT_Logic
          bool  alarmHighTimeToSend();
          char* getAlarmHighString();
          void  alarmHighIsSent();
+
+         //bool  alarmError();
+         //char* getAlarmErrorString();
+         //void  alarmHighIsSent();
 };
 
 #endif  // __THERMOSTAT_H
