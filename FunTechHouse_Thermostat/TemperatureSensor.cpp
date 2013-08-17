@@ -72,26 +72,12 @@ bool TemperatureSensor::valueTimeToSend(double value)
         return true;
     }
 
-    //Check if diff is bigger than diff max
-    if(valueWork>valueSent)
+    double diff = valueWork-valueSent;
+    if( diff > valueDiffMax || -diff > valueDiffMax )
     {
-        if((valueWork-valueSent) > valueDiffMax)
-        {
-            valueSent = valueWork;
-            valueSendCnt = ALWAYS_SEND_CNT;
-            return true;
-        }
-    }
-
-    //Check if negative diff is bigger than diff max
-    if(valueWork<valueSent)
-    {
-        if((valueSent-valueWork) > valueDiffMax)
-        {
-            valueSent = valueWork;
-            valueSendCnt = ALWAYS_SEND_CNT;
-            return true;
-        }
+        valueSent = valueWork;
+        valueSendCnt = ALWAYS_SEND_CNT;
+        return true;
     }
 
     valueSendCnt--;
