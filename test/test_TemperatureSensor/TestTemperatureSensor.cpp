@@ -56,6 +56,8 @@ void TestTemperatureSensor::test_valueTimeToSend()
 
     bool res = sensor.valueTimeToSend(10.0);
     QCOMPARE(res, true); //Always send the first time...
+    sensor.valueIsSent();
+
     for(int i=1; i<=ALWAYS_SEND_CNT; i++)
     {
         res = sensor.valueTimeToSend(10.0);
@@ -70,23 +72,38 @@ void TestTemperatureSensor::test_valueTimeToSend()
 
     //Then we shall send
     QCOMPARE(sensor.valueTimeToSend(10.0), true);
+    sensor.valueIsSent();
+
     //And we are back in the loop
     QCOMPARE(sensor.valueTimeToSend(10.0), false);
 
     //Now check with a +diff
     QCOMPARE(sensor.valueTimeToSend(10.9), true);  //diff > 0.8 => OK
+    sensor.valueIsSent();
     QCOMPARE(sensor.valueTimeToSend(11.0), false); //diff < 0.8 => Not ok
     QCOMPARE(sensor.valueTimeToSend(12.3), true);  //diff 12.3-10.9=1.4 > 0.8 => OK
+    sensor.valueIsSent();
 
     //Now check with a -diff
     QCOMPARE(sensor.valueTimeToSend(10.3), true);  //diff > 0.8 => OK
+    sensor.valueIsSent();
     QCOMPARE(sensor.valueTimeToSend(10.0), false); //diff < 0.8 => Not ok
     QCOMPARE(sensor.valueTimeToSend( 9.4), true);  //diff 10.3-9.4=0.9 > 0.8 => OK
+    sensor.valueIsSent();
+
+    //Test valueIsSent()
+    //If we dont tell him that it is sent, then it is still valid...
+    QCOMPARE(sensor.valueTimeToSend( 12.0), true);
+    QCOMPARE(sensor.valueTimeToSend( 12.0), true);
+    QCOMPARE(sensor.valueTimeToSend( 12.0), true);
+    QCOMPARE(sensor.valueTimeToSend( 12.0), true);
+    sensor.valueIsSent();
+    QCOMPARE(sensor.valueTimeToSend( 12.0), false);
 }
 
 
 /**
- * Test the alarm functions 
+ * Test the alarm functions
  * setAlarmLevels, alarmHighCheck, alarmLowCheck, alarmHighFailed, alarmLowFailed
  */
 void TestTemperatureSensor::test_alarm()
@@ -154,7 +171,7 @@ void TestTemperatureSensor::test_alarm()
     sensor.valueTimeToSend(20.1);
     QCOMPARE(sensor.alarmLowCheck(str, 40), false); //Check that hyst is working
     sensor.valueTimeToSend(19.9);
-    QCOMPARE(sensor.alarmLowCheck(str, 40), false); 
+    QCOMPARE(sensor.alarmLowCheck(str, 40), false);
     sensor.valueTimeToSend(22.0);
     QCOMPARE(sensor.alarmLowCheck(str, 40), false); //Reset by going over
     sensor.valueTimeToSend(18.0);
@@ -214,7 +231,7 @@ void TestTemperatureSensor::test_offset()
 
     sensor.setValueOffset(offset);
     sensor.valueTimeToSend(value);
-    
+
     QCOMPARE(sensor.valueWork, result);
 }
 
@@ -266,7 +283,6 @@ void TestTemperatureSensor::test_checkTopic()
 
     QCOMPARE(true,  sensor.checkTopicSubscribe("in_0"));
     QCOMPARE(false, sensor.checkTopicSubscribe("bogus"));
-    
 
     sensor.setTopic("house/party1/data", "out_0");
     QCOMPARE(true,  sensor.checkTopicSubscribe("house/party1/data"));

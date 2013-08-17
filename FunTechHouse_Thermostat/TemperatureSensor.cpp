@@ -51,6 +51,8 @@ TemperatureSensor::TemperatureSensor()
     alarmLowSent = false;
 
     alarmHyst = 1.0;
+
+    valueSendCnt = ALWAYS_SEND_CNT;
 }
 
 /**
@@ -67,21 +69,23 @@ bool TemperatureSensor::valueTimeToSend(double value)
     //Timeout lets send anyway
     if(0 == valueSendCnt)
     {
-        valueSent = valueWork;
-        valueSendCnt = ALWAYS_SEND_CNT;
         return true;
     }
 
     double diff = valueWork-valueSent;
     if( diff > valueDiffMax || -diff > valueDiffMax )
     {
-        valueSent = valueWork;
-        valueSendCnt = ALWAYS_SEND_CNT;
         return true;
     }
 
     valueSendCnt--;
     return false;
+}
+
+void TemperatureSensor::valueIsSent()
+{
+    valueSendCnt = ALWAYS_SEND_CNT;
+    valueSent = valueWork;
 }
 
 /**
