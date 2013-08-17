@@ -32,9 +32,16 @@
 // 1200/1s/60s=20min
 #define ALWAYS_SEND_CNT 1200
 
+/**
+ * Max size for the internal string buffer
+ */
+#define OUT_STRING_MAX_SIZE 100
+
 class TemperatureSensor : public Sensor
 {
     private:
+        char* outString;  ///< A reusable string for the output, so we minimize malloc usage.
+
         //Variables for the value
         double valueWork;   ///< Active value that we work with right now
         double valueSent;   ///< Last value sent to the server
@@ -59,7 +66,10 @@ class TemperatureSensor : public Sensor
     public:
         TemperatureSensor();
 
-        bool valueTimeToSend(double value);
+        bool  valueTimeToSend(double value);
+        char* getValueString();
+        void  valueIsSent();
+
         void setDiffToSend(double value);
         void setValueOffset(double value);
 

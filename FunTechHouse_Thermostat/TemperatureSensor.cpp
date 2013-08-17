@@ -53,6 +53,7 @@ TemperatureSensor::TemperatureSensor()
     alarmHyst = 1.0;
 
     valueSendCnt = ALWAYS_SEND_CNT;
+    outString = (char*)malloc(sizeof(char)*(OUT_STRING_MAX_SIZE+1));
 }
 
 /**
@@ -80,6 +81,16 @@ bool TemperatureSensor::valueTimeToSend(double value)
 
     valueSendCnt--;
     return false;
+}
+
+char* TemperatureSensor::getValueString()
+{
+    int intPart = 0;
+    int decPart = 0;
+    StringHelp::splitDouble(valueWork, &intPart, &decPart);
+    snprintf(outString, OUT_STRING_MAX_SIZE,
+            "temperature=%d.%02d", intPart, decPart);
+    return outString;
 }
 
 void TemperatureSensor::valueIsSent()
@@ -119,7 +130,7 @@ void TemperatureSensor::setDiffToSend(double value)
 }
 
 /**
- * If a sensor has a static measurment error, 
+ * If a sensor has a static measurment error,
  * this offset value can be added to correct such a error.
  *
  * @param value the offset value that will be added
