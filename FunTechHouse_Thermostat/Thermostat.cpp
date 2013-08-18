@@ -232,17 +232,23 @@ bool Thermostat::calcOutput()
     else
     {
         //We are turned on and waiting for temperature to rise.
-        lowValueCount++;
-
-        if(value < setpoint)
+        if(value < (setpoint-setpointHyst))
         {
-            //We are still low
+            //We are still really low, let's think about more power!
+            lowValueCount++;
+
             if(lowValueCount % LOW_VALUE_COUNT_MAX == 0)
             {
                 //Since we are still under the setpoint,
                 //let's active the next step.
                 incStageOut();
             }
+        }
+        else if(value < setpoint)
+        {
+            //We are still low, but probably going in the right direction (rising)
+            //but if the output is not good enought, then we fall under hyst and 
+            //get more power and then try again...
         }
         else
         {

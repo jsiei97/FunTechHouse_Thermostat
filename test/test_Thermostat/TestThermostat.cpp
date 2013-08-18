@@ -55,6 +55,8 @@ class TestThermostat : public QObject
 
         void test_alarmLowTimeToSend();
         void test_alarmHighTimeToSend();
+
+        void test_calcOutput();
 };
 
 
@@ -104,7 +106,7 @@ void TestThermostat::test_getStageOut3_data()
 
     QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)3 << (uint8_t)0x7 << true << true << true;
     QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)3 << (uint8_t)0x7 << true << true << true;
-    
+
     QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)3 << (uint8_t)0x4 << true << false << false;
     QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)3 << (uint8_t)0x4 << true << false << false;
 
@@ -142,7 +144,7 @@ void TestThermostat::test_incStageOutCnt_data()
     QTest::addColumn<unsigned int>("type");
     QTest::addColumn<unsigned int>("stageCount");
     QTest::addColumn<uint8_t>("outMax");
-    QTest::addColumn<unsigned int>("incCnt"); 
+    QTest::addColumn<unsigned int>("incCnt");
 
     QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_LINEAR  << (unsigned int)3 << (uint8_t)0x7 <<(unsigned int)3;
     QTest::newRow("Test") << (unsigned int)THERMOSTAT_TYPE_BIN_CNT << (unsigned int)3 << (uint8_t)0x7 <<(unsigned int)7;
@@ -709,6 +711,65 @@ void TestThermostat::test_alarmHighTimeToSend()
 }
 
 
+void TestThermostat::test_calcOutput()
+{
+    Thermostat thermostat(4, THERMOSTAT_TYPE_BIN_CNT);
+
+    thermostat.stageOut = 0x0;
+    thermostat.value = 40.0;
+    thermostat.setpoint = 50.0;
+    thermostat.setpointHyst = 2.0;
+
+    //First time under, we always turn the first step on...
+    thermostat.calcOutput();
+    QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x1);
+
+    //Then since we are under setpoint-hyst then wait and then step...
+    for(int step=0; step<(LOW_VALUE_COUNT_MAX-1); step++)
+    {
+        thermostat.calcOutput();
+        QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x1);
+    }
+    thermostat.calcOutput();
+    QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x2);
+
+
+    //But if value is between setpoint and setpoint-hyst
+    //then we just wait (don't step)
+    thermostat.value = 49.0;
+    for(int step=0; step<(LOW_VALUE_COUNT_MAX-1); step++)
+    {
+        thermostat.calcOutput();
+        QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x2);
+    }
+    thermostat.calcOutput();
+    QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x2);
+
+    //And if the value drops under hyst then inc another step.
+    thermostat.value = 45.0;
+    for(int step=0; step<(LOW_VALUE_COUNT_MAX-1); step++)
+    {
+        thermostat.calcOutput();
+        QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x2);
+    }
+    thermostat.calcOutput();
+    QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x3);
+
+    //Over setpoint, turn off
+    thermostat.value = 55.0;
+    thermostat.calcOutput();
+    QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x0);
+
+    //Falling, still off
+    thermostat.value = 49.0;
+    thermostat.calcOutput();
+    QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x0);
+
+    //Under hyst, turn on again...
+    thermostat.value = 47.0;
+    thermostat.calcOutput();
+    QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x1);
+}
 
 
 

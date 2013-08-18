@@ -60,11 +60,11 @@ void configure()
     //Config the thermostat
     thermostat.setSetpoint(60.0, 5.0); //55..60
     thermostat.setValueDiff(1.0);
-    thermostat.setOutMax(0x4); // => 4(9kW), later 2(4kW) or 3(6kW)
+    thermostat.setOutMax(0x3); // => 4(9kW), later 2(4kW) or 3(6kW)
     thermostat.setAlarmLevels(true, 15.0, true, 10.0); // 60-15=45 60+10=70
     thermostat.setTopic(
-            "FunTechHouse/ElPanna_Data",
-            "FunTechHouse/ElPanna"
+            "FunTechHouse/Pannrum/ElPanna_Data",
+            "FunTechHouse/Pannrum/ElPanna"
             );
 
     //Config the first sensor
@@ -72,8 +72,8 @@ void configure()
     sensors[0].setSensor(TemperatureSensor::LM35DZ, A1);
     sensors[0].setDiffToSend(1.4);
     sensors[0].setTopic(
-            "FunTechHouse/GT1-VV-Data",
-            "FunTechHouse/GT1-VV"
+            "FunTechHouse/Pannrum/GT1-VV_Data",
+            "FunTechHouse/Pannrum/GT1-VV"
             );
 
     //Then configure a second sensor
@@ -81,8 +81,8 @@ void configure()
     sensors[1].setSensor(TemperatureSensor::LM35DZ, A2);
     sensors[1].setDiffToSend(1.4);
     sensors[1].setTopic(
-            "FunTechHouse/GT2-VV-Data",
-            "FunTechHouse/GT2-VV"
+            "FunTechHouse/Pannrum/GT2-VV_Data",
+            "FunTechHouse/Pannrum/GT2-VV"
             );
 }
 
