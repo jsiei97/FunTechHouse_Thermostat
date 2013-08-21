@@ -23,6 +23,7 @@
 
 #include <QtCore>
 #include <QtTest>
+#include <QString>
 
 #include "StringHelp.h"
 
@@ -60,6 +61,39 @@ void TestStringHelp::test_add_data()
 
     QTest::newRow("value  -5.6")  <<  -5.6  <<  -5 << 60;
     QTest::newRow("value -42.62") << -42.62 << -42 << 62;
+
+    for( int i = 5480; i <= 5520 ; i += 1 )
+    {
+        double value = i;
+        value /= 100;
+        QString str = QString("%1").arg(value, 0, 'f', 2);
+        QStringList list = str.split(".");
+        //qDebug() << str << list.at(0) << list.at(1) << value;
+
+        bool ok;
+        QTest::newRow("value for") << value << list.at(0).toInt(&ok, 10) << list.at(1).toInt(&ok, 10);
+    }
+    
+    //for( int i = 54990; i <= 55010 ; i += 1 )
+    //55005..55010 rounds ok 55.006 -> 55 01
+    //but this test thinks   55.006 -> 55 00 (since I /=10)
+
+    for( int i = 54990; i <= 55004 ; i += 1 )
+    {
+        double value = i;
+        value /= 1000;
+        QString str = QString("%1").arg(value, 0, 'f', 3);
+        QStringList list = str.split(".");
+        //qDebug() << str << list.at(0) << list.at(1) << value;
+
+        bool ok;
+        int intPart = list.at(0).toInt(&ok, 10);
+        int decPart = list.at(1).toInt(&ok, 10);
+        decPart /= 10;
+
+        //qDebug() << str << intPart << decPart << value;
+        QTest::newRow("value for") << value << intPart << decPart;
+    }
 };
 
 void TestStringHelp::test_add()
@@ -71,6 +105,13 @@ void TestStringHelp::test_add()
     int intPart = 0;
     int decPart = 0;
     StringHelp::splitDouble(value, &intPart, &decPart);
+
+    if( (intPart != outInt) || (decPart != outDec) )
+    {
+        qDebug() << "CORRECT:" << value << outInt  << outDec;
+        qDebug() << "WRONG  :" << value << intPart << decPart;
+        QFAIL("values not the same");
+    }
 
     QCOMPARE(intPart, outInt);
     QCOMPARE(decPart, outDec);

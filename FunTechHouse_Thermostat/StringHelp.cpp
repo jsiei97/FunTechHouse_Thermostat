@@ -42,4 +42,10 @@ void StringHelp::splitDouble(double value, int* integer, int* decimal)
     *integer = (int)(value);
     *decimal = (int)round((value-*integer)*100);
     *decimal = abs(*decimal);
+
+    //54.996 -> 54 99 not 55 100
+    if(*decimal == 100)
+    {
+        *decimal -= 1;
+    }
 }

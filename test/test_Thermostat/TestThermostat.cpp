@@ -414,6 +414,18 @@ void TestThermostat::test_getValueString_data()
     QTest::newRow("Test")
         << "value=60.04 ; setpoint=39.50 ; output=000%"
         << 60.04 << 39.5 << (unsigned int)1 << (unsigned int)0;
+
+    for( int i = 5400; i <= 5700 ; i += 1 )
+    {
+        double value = i;
+        value /= 100;
+        QString str = QString("value=%1 ; setpoint=39.50 ; output=000%").arg(value, 0, 'f', 2);
+
+        //qDebug() << str << value;
+        QTest::newRow("for data")
+            << str
+            << value << 39.5 << (unsigned int)1 << (unsigned int)0;
+    }
 }
 
 void TestThermostat::test_getValueString()
