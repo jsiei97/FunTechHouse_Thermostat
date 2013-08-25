@@ -488,7 +488,7 @@ char* Thermostat::getAlarmLowString()
     StringHelp::splitDouble((setpoint-alarmLevelLow), &aI, &aD);
 
     snprintf(outString, OUT_STRING_MAX_SIZE,
-            "Alarm Low ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
+            "Alarm: Low ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
             vI, vD,
             aI, aD,
             sI, sD,
@@ -514,7 +514,7 @@ char* Thermostat::getAlarmHighString()
     StringHelp::splitDouble((setpoint+alarmLevelHigh), &aI, &aD);
 
     snprintf(outString, OUT_STRING_MAX_SIZE,
-            "Alarm High ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
+            "Alarm: High ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
             vI, vD,
             aI, aD,
             sI, sD,

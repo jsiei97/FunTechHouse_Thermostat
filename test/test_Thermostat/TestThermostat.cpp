@@ -581,7 +581,7 @@ void TestThermostat::test_alarmLowTimeToSend()
     QVERIFY(thermostat.alarmLowTimeToSend());
 
 
-    QString alarmStr1 = QString("Alarm Low ; value=%1 ; alarm=%2 ; setpoint=%3 ; output=100%")
+    QString alarmStr1 = QString("Alarm: Low ; value=%1 ; alarm=%2 ; setpoint=%3 ; output=100%")
         .arg(value, 0, 'f', 2)
         .arg((setpoint-thermostat.alarmLevelLow), 0, 'f', 2)
         .arg(setpoint, 0, 'f', 2);
@@ -682,7 +682,7 @@ void TestThermostat::test_alarmHighTimeToSend()
     QVERIFY(thermostat.alarmHighTimeToSend());
 
 
-    QString alarmStr1 = QString("Alarm High ; value=%1 ; alarm=%2 ; setpoint=%3 ; output=000%")
+    QString alarmStr1 = QString("Alarm: High ; value=%1 ; alarm=%2 ; setpoint=%3 ; output=000%")
         .arg(value, 0, 'f', 2)
         .arg((setpoint+thermostat.alarmLevelHigh), 0, 'f', 2)
         .arg(setpoint, 0, 'f', 2);
