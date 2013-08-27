@@ -399,7 +399,7 @@ bool Thermostat::alarmLowTimeToSend()
     switch ( alarmLow )
     {
         case ALARM_NOT_ACTIVE:
-            if( (value < (setpoint-alarmLevelLow)) && (getStageOut(stages-1)) )
+            if( (value < (setpoint-alarmLevelLow)) && isOutMax() )
             {
                 alarmLow = ALARM_ACTIVE_NOT_SENT;
                 status = true;
