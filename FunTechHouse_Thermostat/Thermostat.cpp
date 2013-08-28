@@ -65,6 +65,10 @@ Thermostat::Thermostat(unsigned int stageCount, ThermostatType type)
     alarmHigh = ALARM_NOT_ACTIVE;
 
     maxOutValue = ((1 << stages)-1);
+
+    //The delayed off is default not active.
+    delayOffCount = 0;
+    delayOff      = 0;
 };
 
 /**
@@ -211,6 +215,23 @@ void Thermostat::setAlarmLevels(
 }
 
 /**
+ * Set a delay for turn off when high
+ *
+ * This will delay the turn off when the value is high, 
+ * this is practical if the device has its own high level protection 
+ * and must run high for X time. 
+ * But this is also dangerous if there is no secondary protection, 
+ * use this feature with care. 
+ *
+ * @param delayOffCount time in seconds between the time the value hits the setpoint and we actually turn off.
+ */
+void Thermostat::setDelayOff(unsigned int delayOffCount)
+{
+    this->delayOffCount = delayOffCount;
+    this->delayOff      = delayOffCount;
+}
+
+/**
  * Calculate the new output.
  *
  * @return true if ok
@@ -255,9 +276,19 @@ bool Thermostat::calcOutput()
             //We are higher than setpoint,
             //time to turn off the output.
 
-            lowValueCount = 0;
-            //setStageOut(0, false);
-            stageOut = 0x0;
+            if(delayOff > 0)
+            {
+                //We are delayed, wait a little more...
+                delayOff--;
+            }
+            else
+            {
+                //No more delays, time to turn off the outputs!
+                delayOff = delayOffCount;
+
+                lowValueCount = 0;
+                stageOut = 0x0;
+            }
         }
     }
     return true;

@@ -117,6 +117,9 @@ class Thermostat : public MQTT_Logic
          double alarmLevelHigh;///< Alarm level, setpoint+alarmLevelHigh=>alarm
          AlarmStates alarmHigh;//< The high alarm statemachine
 
+         unsigned int delayOffCount; ///< How long shall we delay the off
+         unsigned int delayOff;      ///< The countdown variable for delay off
+
          void incStageOut();
          //void decStageOut();
          bool isOutMax();
@@ -137,6 +140,7 @@ class Thermostat : public MQTT_Logic
          void setValueDiff(double valueDiffMax);
          void setAlarmLevels(bool activateLowAlarm, double alarmLevelLow,
                  bool activateHighAlarm, double alarmLevelHigh);
+         void setDelayOff(unsigned int delayOffCount);
 
          bool  valueTimeToSend(double value);
          char* getValueString();

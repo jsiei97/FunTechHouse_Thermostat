@@ -57,6 +57,8 @@ class TestThermostat : public QObject
         void test_alarmHighTimeToSend();
 
         void test_calcOutput();
+
+        void test_setDelayOff();
 };
 
 
@@ -434,7 +436,7 @@ void TestThermostat::test_getValueString()
     QFETCH(double, temperature);
     QFETCH(double, setpoint);
     QFETCH(unsigned int, stageCount);
-    QFETCH(unsigned int, out);
+    //QFETCH(unsigned int, out);
 
     Thermostat thermostat(stageCount, THERMOSTAT_TYPE_LINEAR);
     thermostat.setSetpoint(setpoint, 0.0);
@@ -781,6 +783,47 @@ void TestThermostat::test_calcOutput()
     thermostat.value = 47.0;
     thermostat.calcOutput();
     QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x1);
+}
+
+void TestThermostat::test_setDelayOff()
+{
+    Thermostat thermostat(1, THERMOSTAT_TYPE_BIN_CNT);
+    QCOMPARE((unsigned int)thermostat.delayOffCount, (unsigned int)0);
+    QCOMPARE((unsigned int)thermostat.delayOff,      (unsigned int)0);
+
+    unsigned int testDelay = 15*60; // approx 15 min
+    thermostat.setSetpoint(30.0, 5.0);
+    thermostat.setDelayOff(testDelay);
+    QCOMPARE((unsigned int)thermostat.delayOffCount, (unsigned int)testDelay);
+    QCOMPARE((unsigned int)thermostat.delayOff,      (unsigned int)testDelay);
+
+    //Turn on and off a couple of times...
+    for( unsigned int j=0 ; j<3 ; j++ )
+    {
+        //Start with a low value that will turn out on.
+        thermostat.valueTimeToSend(20.0);
+        QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x1);
+
+        for( unsigned int i=0 ; i<testDelay ; i++ )
+        {
+            //Then set a high value that would normally turn off,
+            //but since the we have a delay, this does not happen.
+            thermostat.valueTimeToSend(40.0);
+            QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x1);
+        }
+
+        //until the delay is over and then we just turn off like normal.
+        thermostat.valueTimeToSend(40.0);
+        QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x0);
+        QCOMPARE((unsigned int)thermostat.delayOffCount, (unsigned int)testDelay);
+        QCOMPARE((unsigned int)thermostat.delayOff,      (unsigned int)testDelay);
+
+        //and stay off until the value drops
+        thermostat.valueTimeToSend(40.0);
+        QCOMPARE((unsigned int)thermostat.stageOut, (unsigned int)0x0);
+        QCOMPARE((unsigned int)thermostat.delayOffCount, (unsigned int)testDelay);
+        QCOMPARE((unsigned int)thermostat.delayOff,      (unsigned int)testDelay);
+    }
 }
 
 
