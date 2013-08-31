@@ -52,7 +52,6 @@ Thermostat::Thermostat(unsigned int stageCount, ThermostatType type)
     valueSendCnt = 0;
 
     lowValueCount = 0;
-    outString = (char*)malloc(sizeof(char)*(OUT_STRING_MAX_SIZE+1));
 
     firstAlarm = FIRST_ALARM_ALLOWED;
 
@@ -334,7 +333,7 @@ bool Thermostat::valueTimeToSend(double value)
  *
  * @return char* to the string
  */
-char* Thermostat::getValueString()
+bool Thermostat::getValueString(char* data, int size)
 {
     int vI, vD;
     int sI, sD;
@@ -342,11 +341,15 @@ char* Thermostat::getValueString()
     StringHelp::splitDouble(value, &vI, &vD);
     StringHelp::splitDouble(setpoint, &sI, &sD);
 
-    snprintf(outString, OUT_STRING_MAX_SIZE,
+    int res = snprintf(data, size,
             "value=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
             vI, vD,
             sI, sD, getOutValue());
-    return outString;
+
+    if(res < size)
+        return true;
+    
+    return false;
 }
 
 /**
@@ -508,7 +511,7 @@ bool Thermostat::alarmHighTimeToSend()
  *
  * @return char* with the low alarm string
  */
-char* Thermostat::getAlarmLowString()
+bool Thermostat::getAlarmLowString(char* data, int size)
 {
     int vI, vD;
     int sI, sD;
@@ -518,13 +521,17 @@ char* Thermostat::getAlarmLowString()
     StringHelp::splitDouble(setpoint, &sI, &sD);
     StringHelp::splitDouble((setpoint-alarmLevelLow), &aI, &aD);
 
-    snprintf(outString, OUT_STRING_MAX_SIZE,
+    int res = snprintf(data, size,
             "Alarm: Low ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
             vI, vD,
             aI, aD,
             sI, sD,
             getOutValue());
-    return outString;
+
+    if(res < size)
+        return true;
+    
+    return false;
 }
 
 /**
@@ -534,7 +541,7 @@ char* Thermostat::getAlarmLowString()
  *
  * @return char* with the high alarm string
  */
-char* Thermostat::getAlarmHighString()
+bool Thermostat::getAlarmHighString(char* data, int size)
 {
     int vI, vD;
     int sI, sD;
@@ -544,13 +551,17 @@ char* Thermostat::getAlarmHighString()
     StringHelp::splitDouble(setpoint, &sI, &sD);
     StringHelp::splitDouble((setpoint+alarmLevelHigh), &aI, &aD);
 
-    snprintf(outString, OUT_STRING_MAX_SIZE,
+    int res = snprintf(data, size,
             "Alarm: High ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
             vI, vD,
             aI, aD,
             sI, sD,
             getOutValue());
-    return outString;
+
+    if(res < size)
+        return true;
+    
+    return false;
 }
 
 /**
@@ -560,6 +571,10 @@ void Thermostat::alarmLowIsSent()
 {
     switch ( alarmLow )
     {
+        case ALARM_ACTIVE_SENT:
+            break;
+        case ALARM_NOT_ACTIVE:
+            break;
         case ALARM_ACTIVE_NOT_SENT:
             alarmLow = ALARM_ACTIVE_SENT;
             break;
@@ -573,6 +588,10 @@ void Thermostat::alarmHighIsSent()
 {
     switch ( alarmHigh )
     {
+        case ALARM_ACTIVE_SENT:
+            break;
+        case ALARM_NOT_ACTIVE:
+            break;
         case ALARM_ACTIVE_NOT_SENT:
             alarmHigh = ALARM_ACTIVE_SENT;
             break;

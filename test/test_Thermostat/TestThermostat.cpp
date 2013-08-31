@@ -442,7 +442,10 @@ void TestThermostat::test_getValueString()
     thermostat.setSetpoint(setpoint, 0.0);
     thermostat.valueTimeToSend(temperature);
 
-    QString result(thermostat.getValueString());
+    char str[80];
+    QVERIFY(thermostat.getValueString(str, 80));
+
+    QString result(str);
     //qDebug() << valueString << result;
     QCOMPARE(valueString, result);
 }
@@ -588,7 +591,9 @@ void TestThermostat::test_alarmLowTimeToSend()
         .arg((setpoint-thermostat.alarmLevelLow), 0, 'f', 2)
         .arg(setpoint, 0, 'f', 2);
 
-    QString alarmStr2(thermostat.getAlarmLowString());
+    char str[80];
+    QVERIFY(thermostat.getAlarmLowString(str, 80));
+    QString alarmStr2(str);
     //qDebug() << alarmStr1;
     //qDebug() << alarmStr2;
     QCOMPARE(alarmStr1, alarmStr2);
@@ -689,7 +694,9 @@ void TestThermostat::test_alarmHighTimeToSend()
         .arg((setpoint+thermostat.alarmLevelHigh), 0, 'f', 2)
         .arg(setpoint, 0, 'f', 2);
 
-    QString alarmStr2(thermostat.getAlarmHighString());
+    char str[80];
+    QVERIFY(thermostat.getAlarmHighString(str, 80));
+    QString alarmStr2(str);
     //qDebug() << alarmStr1;
     //qDebug() << alarmStr2;
     QCOMPARE(alarmStr1, alarmStr2);

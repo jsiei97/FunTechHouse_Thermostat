@@ -34,11 +34,6 @@
 #define LOW_VALUE_COUNT_MAX 180
 
 /**
- * Max size for the internal string buffer
- */
-#define OUT_STRING_MAX_SIZE 100
-
-/**
  * If value is the "same" for "cnt" questions, then send anyway.
  *
  * If sleep is 1s (1000ms) and there is 1 question per rotation
@@ -96,7 +91,6 @@ class Thermostat : public MQTT_Logic
          double setpoint;  ///< Target value
          uint8_t stageOut; ///< Output state for the stages, bit0 is stage0, bit1 is stage1 etc etc.
          uint8_t maxOutValue; ///< Out not allowed to be bigger than this, more or less limit out to this.
-         char* outString;  ///< A reusable string for the output, so we minimize malloc usage.
 
          double valueSent;     ///< Last value sent to server.
          double setpointSent;  ///< Last setpoint sent to server.
@@ -142,17 +136,17 @@ class Thermostat : public MQTT_Logic
                  bool activateHighAlarm, double alarmLevelHigh);
          void setDelayOff(unsigned int delayOffCount);
 
-         bool  valueTimeToSend(double value);
-         char* getValueString();
-         void  valueIsSent();
+         bool valueTimeToSend(double value);
+         bool getValueString(char* data, int size);
+         void valueIsSent();
 
-         bool  alarmLowTimeToSend();
-         char* getAlarmLowString();
-         void  alarmLowIsSent();
+         bool alarmLowTimeToSend();
+         bool getAlarmLowString(char* data, int size);
+         void alarmLowIsSent();
 
-         bool  alarmHighTimeToSend();
-         char* getAlarmHighString();
-         void  alarmHighIsSent();
+         bool alarmHighTimeToSend();
+         bool getAlarmHighString(char* data, int size);
+         void alarmHighIsSent();
 
          //bool  alarmError();
          //char* getAlarmErrorString();

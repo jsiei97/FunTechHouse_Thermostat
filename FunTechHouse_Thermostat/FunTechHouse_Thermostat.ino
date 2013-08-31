@@ -30,6 +30,7 @@
 #include "ValueAvg.h"
 #include "TemperatureSensor.h"
 
+#define OUT_STR_MAX 100
 
 // Update these with values suitable for your network.
 byte mac[]    = {  0x90, 0xA2, 0xDA, 0x0D, 0x51, 0xB3 };
@@ -150,7 +151,7 @@ void loop()
 
     ValueAvg filter;
     double temperature = 0;
-
+    char str[OUT_STR_MAX];
 
     //Part 1.1 - Update Thermostat with new value and check alarms
     filter.init();
@@ -166,9 +167,8 @@ void loop()
     {
         if( thermostat.valueTimeToSend(temperature) )
         {
-            if(client.publish(
-                        thermostat.getTopicPublish(),
-                        thermostat.getValueString()))
+            thermostat.getValueString( str, OUT_STR_MAX );
+            if(client.publish( thermostat.getTopicPublish(), str)) 
             {
                 thermostat.valueIsSent();
             }
@@ -176,9 +176,8 @@ void loop()
 
         if( thermostat.alarmLowTimeToSend() )
         {
-            if(client.publish(
-                        thermostat.getTopicPublish(),
-                        thermostat.getAlarmLowString()))
+            thermostat.getAlarmLowString( str, OUT_STR_MAX );
+            if(client.publish( thermostat.getTopicPublish(), str) )
             {
                 thermostat.alarmLowIsSent();
             }
@@ -186,9 +185,8 @@ void loop()
 
         if( thermostat.alarmHighTimeToSend() )
         {
-            if(client.publish(
-                        thermostat.getTopicPublish(),
-                        thermostat.getAlarmHighString()))
+            thermostat.getAlarmHighString( str, OUT_STR_MAX );
+            if(client.publish( thermostat.getTopicPublish(), str) )
             {
                 thermostat.alarmHighIsSent();
             }
@@ -274,16 +272,29 @@ void loop()
             {
                 if(client.connected())
                 {
-                    if(client.publish(
-                            sensors[i].getTopicPublish(),
-                            sensors[i].getValueString()))
+                    sensors[i].getValueString( str, OUT_STR_MAX );
+                    if( client.publish( sensors[i].getTopicPublish(), str) )
                     {
                         sensors[i].valueIsSent();
                     }
                 }
             }
 
-            /// @todo Fix alarm logic
+            if(sensors[i].alarmHighCheck(str, OUT_STR_MAX))
+            {
+                if( (false == client.connected()) || (false == client.publish(sensors[i].getTopicPublish(), str)) )
+                {
+                    sensors[i].alarmHighFailed();
+                }
+            }
+
+            if(sensors[i].alarmLowCheck(str, OUT_STR_MAX))
+            {
+                if( (false == client.connected()) || (false == client.publish(sensors[i].getTopicPublish(), str)) )
+                {
+                    sensors[i].alarmLowFailed();
+                }
+            }
         }
     }
 
