@@ -39,7 +39,7 @@ byte mac[]    = {  0x90, 0xA2, 0xDA, 0x0D, 0x51, 0xB3 };
 char project_name[]  = "FunTechHouse_Thermostat_VMP";
 
 Thermostat thermostat(1, THERMOSTAT_TYPE_BIN_CNT);
-#define SENSOR_CNT 4
+#define SENSOR_CNT 3
 TemperatureSensor sensors[SENSOR_CNT];
 
 PubSubClient client("mosqhub", 1883, callback);
@@ -168,7 +168,7 @@ void loop()
         if( thermostat.valueTimeToSend(temperature) )
         {
             thermostat.getValueString( str, OUT_STR_MAX );
-            if(client.publish( thermostat.getTopicPublish(), str)) 
+            if(client.publish( thermostat.getTopicPublish(), str))
             {
                 thermostat.valueIsSent();
             }
