@@ -39,7 +39,7 @@ byte mac[]    = {  0x90, 0xA2, 0xDA, 0x0D, 0x51, 0xB3 };
 char project_name[]  = "FunTechHouse_Thermostat_VMP";
 
 Thermostat thermostat(1, THERMOSTAT_TYPE_BIN_CNT);
-#define SENSOR_CNT 3
+#define SENSOR_CNT 4
 TemperatureSensor sensors[SENSOR_CNT];
 
 PubSubClient client("mosqhub", 1883, callback);
@@ -59,10 +59,10 @@ void callback(char* topic, byte* payload, unsigned int length)
 void configure()
 {
     //Config the thermostat, GT2-VMP on A0
-    thermostat.setSetpoint(45.0, 15.0); //45..30
+    thermostat.setSetpoint(45.0, 10.0); //45..35
     thermostat.setValueDiff(1.0);
     thermostat.setDelayOff(15*60); // 15min
-    thermostat.setAlarmLevels(true, 20.0, false, 10.0); // 45-20=25 60+10=70
+    thermostat.setAlarmLevels(true, 15.0, true, 15.0); // 45-15=30 45+15=60
     thermostat.setTopic(
             "FunTechHouse/Pannrum/VMP_Data",
             "FunTechHouse/Pannrum/VMP"
@@ -83,26 +83,24 @@ void configure()
     sensors[1].setDiffToSend(1.0);
     sensors[1].setTopic(
             "FunTechHouse/Pannrum/GT3-RAD_Data",
-            "FunTechHouse/Pannrum/GT2-RAD"
+            "FunTechHouse/Pannrum/GT3-RAD"
             );
 
     sensors[2].setAlarmLevels(false, 25.0, false, 22.0);
     sensors[2].setSensor(TemperatureSensor::LM35DZ, A3);
     sensors[2].setDiffToSend(1.0);
     sensors[2].setTopic(
+            "FunTechHouse/Pannrum/GT3-VMP_Data",
+            "FunTechHouse/Pannrum/GT3-VMP"
+            );
+
+    sensors[3].setAlarmLevels(false, 25.0, false, 22.0);
+    sensors[3].setSensor(TemperatureSensor::LM35DZ, A4);
+    sensors[3].setDiffToSend(1.0);
+    sensors[3].setTopic(
             "FunTechHouse/Pannrum/GT4-RAD_Data",
             "FunTechHouse/Pannrum/GT4-RAD"
             );
-
-    /*
-    sensors[3].setAlarmLevels(false, 25.0, false, 22.0);
-    sensors[3].setSensor(TemperatureSensor::LM34CAZ, A4);
-    sensors[3].setDiffToSend(1.0);
-    sensors[3].setTopic(
-            "FunTechHouse/Pannrum/OutDoor_Data",
-            "FunTechHouse/Pannrum/OutDoor"
-            );
-    */
 }
 
 void setup()
