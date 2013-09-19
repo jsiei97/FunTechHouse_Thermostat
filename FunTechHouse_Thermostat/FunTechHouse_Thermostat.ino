@@ -26,7 +26,7 @@
 #include "PubSubClient.h"
 #include "Thermostat.h"
 
-#include "LM35DZ.h"
+#include "LVTS.h"
 #include "ValueAvg.h"
 #include "TemperatureSensor.h"
 
@@ -155,7 +155,7 @@ void loop()
     filter.init();
     for( int j=0 ; j<9 ; j++ )
     {
-        filter.addValue( LM35DZ::analog11_to_temperature( analogRead(A0) ) );
+        filter.addValue( LVTS::analog11_to_temperature( analogRead(A0) ) );
     }
     temperature = filter.getValue();
 
@@ -241,7 +241,7 @@ void loop()
             for( int j=0 ; j<9 ; j++ )
             {
                 filter.addValue(
-                        LM35DZ::analog11_to_temperature(
+                        LVTS::analog11_to_temperature(
                             analogRead(
                                 sensors[i].getSensorPin()
                                 )

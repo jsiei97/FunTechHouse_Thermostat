@@ -1,7 +1,7 @@
 /**
- * @file LM35DZ.cpp
+ * @file LVTS.cpp
  * @author Johan Simonsson
- * @brief Helper for the LM35DZ sensor
+ * @brief Low Voltage Temperature Sensor Class
  */
 
 /*
@@ -21,7 +21,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "LM35DZ.h"
+#include "LVTS.h"
 
 /**
  * Converts a analogRead value into a temperature (Celsius)
@@ -30,7 +30,7 @@
  * @param reading from analogRead
  * @return temperature in degrees celsius
  */
-double LM35DZ::analog33_to_temperature(int reading)
+double LVTS::analog33_to_temperature(int reading)
 {
     double temperature = reading * 3.30; // 3.3V Aref
     temperature /= 1024.0;               // ADC resolution
@@ -52,7 +52,7 @@ double LM35DZ::analog33_to_temperature(int reading)
  * @param reading from analogRead
  * @return temperature in degrees celsius
  */
-double LM35DZ::analog11_to_temperature(int reading)
+double LVTS::analog11_to_temperature(int reading)
 {
     double temperature = reading * 1.10; // Internal 1.1V ref
     temperature /= 1024.0;               // ADC resolution

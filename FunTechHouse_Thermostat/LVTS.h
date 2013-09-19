@@ -1,7 +1,7 @@
 /**
- * @file LM35DZ.h
+ * @file LVTS.h
  * @author Johan Simonsson
- * @brief Helper for the LM35DZ sensor
+ * @brief Low Voltage Temperature Sensor Class
  */
 
 /*
@@ -21,10 +21,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef  __LM35DZ_H
-#define  __LM35DZ_H
+#ifndef  __LVTS_H
+#define  __LVTS_H
 
-class LM35DZ
+class LVTS
 {
      private:
      public:
@@ -32,4 +32,4 @@ class LM35DZ
          static double analog11_to_temperature(int reading);
 };
 
-#endif  // __LM35DZ_H
+#endif  // __LVTS_H
