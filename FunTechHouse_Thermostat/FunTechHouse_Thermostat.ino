@@ -61,7 +61,7 @@ void configure()
     //Config the thermostat, GT2-VMP on A0
     thermostat.setSetpoint(45.0, 10.0); //45..35
     thermostat.setValueDiff(1.0);
-    thermostat.setDelayOff(15*60); // 15min
+    thermostat.setDelayOff(20*60); // 20min
     thermostat.setAlarmLevels(true, 15.0, true, 15.0); // 45-15=30 45+15=60
     thermostat.setTopic(
             "FunTechHouse/Pannrum/VMP_Data",
