@@ -24,45 +24,78 @@
 #include "LVTS.h"
 
 /**
- * Converts a analogRead value into a temperature (Celsius)
- * analogReference(EXTERNAL); should be used and Aref connected to 3.3V.
+ * LM35 temperature sensor.
  *
- * @param reading from analogRead
- * @return temperature in degrees celsius
+ * analogReference(INTERNAL); should be used.
+ *
+ * @param reading from analogRead, (0..1023).
+ * @param ok becomes true if ok, false if fail.
+ * @return temperature in degC
  */
-double LVTS::analog33_to_temperature(int reading)
+double LVTS::lm35(int reading, bool *ok)
 {
-    double temperature = reading * 3.30; // 3.3V Aref
+    double aref = 1.10; // Internal 1.1V ref
+
+    double temperature = reading * aref;
     temperature /= 1024.0;               // ADC resolution
     temperature *= 100;                  // 10mV/C (0.01V/C)
 
     //Datasheet tells us
     //-"Rated for full −55 ̊ to +150 ̊C range"
-    if( temperature <= 150 && temperature >= -55)
+    //But with Aref 1.1 we only get values 
+    //from 0V..1.05V => 0degC..105degC
+    if( temperature <= 105.0 && temperature >= 0.0 )
     {
+        *ok=true;
         return temperature;
     }
+
+    *ok=false;
     return 0.0;
 }
 
 /**
- * Converts a analogRead value into a temperature (Celsius)
+ * LM34 temperature sensor.
+ *
  * analogReference(INTERNAL); should be used.
  *
- * @param reading from analogRead
- * @return temperature in degrees celsius
+ * @param reading from analogRead, (0..1023).
+ * @param ok becomes true if ok, false if fail.
+ * @return temperature in degC
  */
-double LVTS::analog11_to_temperature(int reading)
+double LVTS::lm34(int reading, bool *ok)
 {
-    double temperature = reading * 1.10; // Internal 1.1V ref
-    temperature /= 1024.0;               // ADC resolution
-    temperature *= 100;                  // 10mV/C (0.01V/C)
+    double aref = 1.10; // Internal 1.1V ref
 
-    //Datasheet tells us
-    //-"Rated for full −55 ̊ to +150 ̊C range"
-    if( temperature <= 150 && temperature >= -55)
+    double temperature = reading * aref;
+    temperature /= 1024.0;               // ADC resolution
+    temperature *= 100;                  // 10mV/C (0.01V/F)
+
+    temperature = F2C(temperature);
+
+    //With Aref 1.1 we get values 
+    //  0degF .. 105degF
+    //-17degC ..  40degC
+    if( temperature <= 40 && temperature >= -17)
     {
+        *ok=true;
         return temperature;
     }
+
+    *ok=false;
     return 0.0;
+}
+
+/**
+ * Convert Fahrenheit to Celcius
+ *
+ * @param degC value in Celcius
+ * @return value in Fahrenheit
+ */
+double LVTS::F2C(double degC)
+{
+    degC -= 32;
+    degC *= 5;
+    degC /= 9;
+    return degC; //is now F
 }

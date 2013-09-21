@@ -152,16 +152,22 @@ void loop()
     char str[OUT_STR_MAX];
 
     //Part 1.1 - Update Thermostat with new value and check alarms
+    bool ok = true;
     filter.init();
     for( int j=0 ; j<9 ; j++ )
     {
-        filter.addValue( LVTS::analog11_to_temperature( analogRead(A0) ) );
+        bool res = false;
+        filter.addValue( LVTS::lm35( analogRead(A0), &res ) );
+        if(false == res)
+        {
+            ok = false;
+        }
     }
     temperature = filter.getValue();
 
     //No sensor connected becomes 109deg,
     //so lets just ignore values higher than 105
-    if(temperature <= 105.0 && temperature != 0.0)
+    if(ok)
     {
         if( thermostat.valueTimeToSend(temperature) )
         {
@@ -231,7 +237,7 @@ void loop()
     // Part 2.1 - Loop the misc sensors attached to this device.
     for( int i=0 ; i<SENSOR_CNT; i++ )
     {
-        bool readOk = false;
+        bool readOk = true;
 
         if( ((int)TemperatureSensor::LM35DZ) == sensors[i].getSensorType() )
         {
@@ -240,22 +246,19 @@ void loop()
             filter.init();
             for( int j=0 ; j<9 ; j++ )
             {
+                bool res = false;
                 filter.addValue(
-                        LVTS::analog11_to_temperature(
-                            analogRead(
-                                sensors[i].getSensorPin()
-                                )
+                        LVTS::lm35(
+                            analogRead( sensors[i].getSensorPin() ),
+                            &res
                             )
                         );
+                if(false == res)
+                {
+                    readOk = false;
+                }
             }
             temperature = filter.getValue();
-
-            //No sensor connected becomes 109deg,
-            //so lets just ignore values higher than 105
-            if(temperature <= 105.0 && temperature != 0.0)
-            {
-                readOk = true;
-            }
         }
 
         if(true == readOk)

@@ -28,8 +28,11 @@ class LVTS
 {
      private:
      public:
-         static double analog33_to_temperature(int reading);
-         static double analog11_to_temperature(int reading);
+         static double lm34(int reading, bool *ok);
+         static double lm35(int reading, bool *ok);
+
+         static double F2C(double degC);
+
 };
 
 #endif  // __LVTS_H
