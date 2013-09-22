@@ -27,6 +27,7 @@
 #include <stdint.h>
 
 #include "MQTT_Logic.h"
+#include "Regulator.h"
 
 /**
  * Time until next stage kicks in
@@ -81,7 +82,7 @@ typedef enum
  * @dotfile state_alarm_low.gv The alarm low state machine
  * @dotfile state_alarm_high.gv The alarm high state machine
  */
-class Thermostat : public MQTT_Logic
+class Thermostat : public Regulator 
 {
      private:
          unsigned int stages; ///< How many output stages does this thermostat have?

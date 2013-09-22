@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "Thermostat.h"
+#include "Regulator.h"
 #include "StringHelp.h"
 
 /**

@@ -11,5 +11,5 @@ SOURCES += TestThermostat.cpp
 # Code to test
 DEPENDPATH  += ../../FunTechHouse_Thermostat/
 INCLUDEPATH += ../../FunTechHouse_Thermostat/
-SOURCES += Thermostat.cpp MQTT_Logic.cpp StringHelp.cpp
+SOURCES += Thermostat.cpp Regulator.cpp MQTT_Logic.cpp StringHelp.cpp
 
