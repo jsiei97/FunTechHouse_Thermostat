@@ -6,10 +6,10 @@ DEFINES += private=public
 # Test code
 DEPENDPATH += .
 INCLUDEPATH += .
-SOURCES += TestThermostat.cpp
+SOURCES += TestLVTS.cpp
 
 # Code to test
 DEPENDPATH  += ../../FunTechHouse_Thermostat/
 INCLUDEPATH += ../../FunTechHouse_Thermostat/
-SOURCES += Thermostat.cpp Regulator.cpp MQTT_Logic.cpp StringHelp.cpp
+SOURCES += LVTS.cpp
 

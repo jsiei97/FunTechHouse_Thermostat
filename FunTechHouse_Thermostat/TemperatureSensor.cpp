@@ -53,7 +53,6 @@ TemperatureSensor::TemperatureSensor()
     alarmHyst = 1.0;
 
     valueSendCnt = ALWAYS_SEND_CNT;
-    outString = (char*)malloc(sizeof(char)*(OUT_STRING_MAX_SIZE+1));
 }
 
 /**
@@ -83,14 +82,18 @@ bool TemperatureSensor::valueTimeToSend(double value)
     return false;
 }
 
-char* TemperatureSensor::getValueString()
+bool TemperatureSensor::getValueString(char* data, int size)
 {
     int intPart = 0;
     int decPart = 0;
     StringHelp::splitDouble(valueWork, &intPart, &decPart);
-    snprintf(outString, OUT_STRING_MAX_SIZE,
+    int res = snprintf(data, size,
             "temperature=%d.%02d", intPart, decPart);
-    return outString;
+
+    if(res < size)
+        return true;
+    
+    return false;
 }
 
 void TemperatureSensor::valueIsSent()

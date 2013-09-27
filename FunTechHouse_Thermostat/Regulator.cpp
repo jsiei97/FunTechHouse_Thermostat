@@ -1,7 +1,7 @@
 /**
- * @file LM35DZ.h
+ * @file Regulator.cpp
  * @author Johan Simonsson
- * @brief Helper for the LM35DZ sensor
+ * @brief ...
  */
 
 /*
@@ -21,15 +21,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef  __LM35DZ_H
-#define  __LM35DZ_H
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-class LM35DZ
+#include "Regulator.h"
+#include "StringHelp.h"
+
+/**
+ * The default constructor.
+ */
+Regulator::Regulator()
 {
-     private:
-     public:
-         static double analog33_to_temperature(int reading);
-         static double analog11_to_temperature(int reading);
 };
 
-#endif  // __LM35DZ_H

@@ -37,4 +37,11 @@ do
     echo
 done
 
+if [ "$result" -eq "0" ]
+then
+    echo "Test OK"
+else
+    echo "Result $result"
+fi
+
 exit $result

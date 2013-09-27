@@ -26,10 +26,11 @@
 #include "PubSubClient.h"
 #include "Thermostat.h"
 
-#include "LM35DZ.h"
+#include "LVTS.h"
 #include "ValueAvg.h"
 #include "TemperatureSensor.h"
 
+#define OUT_STR_MAX 100
 
 // Update these with values suitable for your network.
 byte mac[]    = {  0xDE, 0xED, 0xBA, 0xFE, 0xFE, 0x05 };
@@ -98,6 +99,8 @@ void setup()
     pinMode(A0, INPUT);
     pinMode(A1, INPUT);
     pinMode(A2, INPUT);
+    pinMode(A3, INPUT);
+    pinMode(A4, INPUT);
 
     //Configure this project.
     configure();
@@ -130,25 +133,30 @@ void loop()
 
     ValueAvg filter;
     double temperature = 0;
-
+    char str[OUT_STR_MAX];
 
     //Part 1.1 - Update Thermostat with new value and check alarms
+    bool ok = true;
     filter.init();
     for( int j=0 ; j<9 ; j++ )
     {
-        filter.addValue( LM35DZ::analog11_to_temperature( analogRead(A0) ) );
+        bool res = false;
+        filter.addValue( LVTS::lm35( analogRead(A0), &res ) );
+        if(false == res)
+        {
+            ok = false;
+        }
     }
     temperature = filter.getValue();
 
     //No sensor connected becomes 109deg,
     //so lets just ignore values higher than 105
-    if(temperature <= 105.0 && temperature != 0.0)
+    if(ok)
     {
         if( thermostat.valueTimeToSend(temperature) )
         {
-            if(client.publish(
-                        thermostat.getTopicPublish(),
-                        thermostat.getValueString()))
+            thermostat.getValueString( str, OUT_STR_MAX );
+            if(client.publish( thermostat.getTopicPublish(), str))
             {
                 thermostat.valueIsSent();
             }
@@ -156,9 +164,8 @@ void loop()
 
         if( thermostat.alarmLowTimeToSend() )
         {
-            if(client.publish(
-                        thermostat.getTopicPublish(),
-                        thermostat.getAlarmLowString()))
+            thermostat.getAlarmLowString( str, OUT_STR_MAX );
+            if(client.publish( thermostat.getTopicPublish(), str) )
             {
                 thermostat.alarmLowIsSent();
             }
@@ -166,9 +173,8 @@ void loop()
 
         if( thermostat.alarmHighTimeToSend() )
         {
-            if(client.publish(
-                        thermostat.getTopicPublish(),
-                        thermostat.getAlarmHighString()))
+            thermostat.getAlarmHighString( str, OUT_STR_MAX );
+            if(client.publish( thermostat.getTopicPublish(), str) )
             {
                 thermostat.alarmHighIsSent();
             }
@@ -215,7 +221,7 @@ void loop()
     // Part 2.1 - Loop the misc sensors attached to this device.
     for( int i=0 ; i<SENSOR_CNT; i++ )
     {
-        bool readOk = false;
+        bool readOk = true;
 
         if( ((int)TemperatureSensor::LM35DZ) == sensors[i].getSensorType() )
         {
@@ -224,22 +230,19 @@ void loop()
             filter.init();
             for( int j=0 ; j<9 ; j++ )
             {
-                filter.addValue( 
-                        LM35DZ::analog11_to_temperature(
-                            analogRead(
-                                sensors[i].getSensorPin()
-                                ) 
+                bool res = false;
+                filter.addValue(
+                        LVTS::lm35(
+                            analogRead( sensors[i].getSensorPin() ),
+                            &res
                             )
                         );
+                if(false == res)
+                {
+                    readOk = false;
+                }
             }
             temperature = filter.getValue();
-
-            //No sensor connected becomes 109deg,
-            //so lets just ignore values higher than 105
-            if(temperature <= 105.0 && temperature != 0.0)
-            {
-                readOk = true;
-            }
         }
 
         if(true == readOk)
@@ -254,16 +257,29 @@ void loop()
             {
                 if(client.connected())
                 {
-                    if(client.publish(
-                            sensors[i].getTopicPublish(), 
-                            sensors[i].getValueString()))
+                    sensors[i].getValueString( str, OUT_STR_MAX );
+                    if( client.publish( sensors[i].getTopicPublish(), str) )
                     {
                         sensors[i].valueIsSent();
                     }
                 }
             }
 
-            /// @todo Fix alarm logic
+            if(sensors[i].alarmHighCheck(str, OUT_STR_MAX))
+            {
+                if( (false == client.connected()) || (false == client.publish(sensors[i].getTopicPublish(), str)) )
+                {
+                    sensors[i].alarmHighFailed();
+                }
+            }
+
+            if(sensors[i].alarmLowCheck(str, OUT_STR_MAX))
+            {
+                if( (false == client.connected()) || (false == client.publish(sensors[i].getTopicPublish(), str)) )
+                {
+                    sensors[i].alarmLowFailed();
+                }
+            }
         }
     }
 

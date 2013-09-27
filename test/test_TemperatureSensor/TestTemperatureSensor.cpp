@@ -21,6 +21,9 @@ class TestTemperatureSensor : public QObject
         void test_setSensor();
         void test_setTopic();
         void test_checkTopic();
+
+        void test_getValueString();
+        void test_getValueString_data();
 };
 
 /*
@@ -287,6 +290,39 @@ void TestTemperatureSensor::test_checkTopic()
     sensor.setTopic("house/party1/data", "out_0");
     QCOMPARE(true,  sensor.checkTopicSubscribe("house/party1/data"));
     QCOMPARE(false, sensor.checkTopicSubscribe("house/party2/data"));
+}
+
+void TestTemperatureSensor::test_getValueString_data()
+{
+    QTest::addColumn<QString>("valueString");
+    QTest::addColumn<double>("temperature");
+
+    QTest::newRow("Test") << "temperature=30.00"  <<  30.0;
+    QTest::newRow("Test") << "temperature=30.33"  <<  30.33;
+    QTest::newRow("Test") << "temperature=25.00"  <<  25.0;
+    QTest::newRow("Test") << "temperature=25.20"  <<  25.2;
+    QTest::newRow("Test") << "temperature=0.00"  <<  0.0;
+    QTest::newRow("Test") << "temperature=-10.00" << -10.0;
+    QTest::newRow("Test") << "temperature=-10.50" << -10.5;
+    QTest::newRow("Test") << "temperature=-1.00"  << -1.0;
+}
+
+void TestTemperatureSensor::test_getValueString()
+{
+    QFETCH(QString, valueString);
+    QFETCH(double, temperature);
+
+    TemperatureSensor sensor;
+    sensor.setTopic("in_0", "out_0");
+
+    sensor.valueTimeToSend(temperature);
+
+    char str[30];
+    QVERIFY(sensor.getValueString(str, 30));
+
+    QString result(str);
+    //qDebug() << valueString << result;
+    QCOMPARE(valueString, result);
 }
 
 QTEST_MAIN(TestTemperatureSensor)

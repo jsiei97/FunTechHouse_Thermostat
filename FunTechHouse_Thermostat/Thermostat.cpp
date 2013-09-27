@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "Thermostat.h"
+#include "Regulator.h"
 #include "StringHelp.h"
 
 /**
@@ -52,7 +53,6 @@ Thermostat::Thermostat(unsigned int stageCount, ThermostatType type)
     valueSendCnt = 0;
 
     lowValueCount = 0;
-    outString = (char*)malloc(sizeof(char)*(OUT_STRING_MAX_SIZE+1));
 
     firstAlarm = FIRST_ALARM_ALLOWED;
 
@@ -65,6 +65,10 @@ Thermostat::Thermostat(unsigned int stageCount, ThermostatType type)
     alarmHigh = ALARM_NOT_ACTIVE;
 
     maxOutValue = ((1 << stages)-1);
+
+    //The delayed off is default not active.
+    delayOffCount = 0;
+    delayOff      = 0;
 };
 
 /**
@@ -211,6 +215,23 @@ void Thermostat::setAlarmLevels(
 }
 
 /**
+ * Set a delay for turn off when high
+ *
+ * This will delay the turn off when the value is high, 
+ * this is practical if the device has its own high level protection 
+ * and must run high for X time. 
+ * But this is also dangerous if there is no secondary protection, 
+ * use this feature with care. 
+ *
+ * @param delayOffCount time in seconds between the time the value hits the setpoint and we actually turn off.
+ */
+void Thermostat::setDelayOff(unsigned int delayOffCount)
+{
+    this->delayOffCount = delayOffCount;
+    this->delayOff      = delayOffCount;
+}
+
+/**
  * Calculate the new output.
  *
  * @return true if ok
@@ -255,9 +276,19 @@ bool Thermostat::calcOutput()
             //We are higher than setpoint,
             //time to turn off the output.
 
-            lowValueCount = 0;
-            //setStageOut(0, false);
-            stageOut = 0x0;
+            if(delayOff > 0)
+            {
+                //We are delayed, wait a little more...
+                delayOff--;
+            }
+            else
+            {
+                //No more delays, time to turn off the outputs!
+                delayOff = delayOffCount;
+
+                lowValueCount = 0;
+                stageOut = 0x0;
+            }
         }
     }
     return true;
@@ -303,7 +334,7 @@ bool Thermostat::valueTimeToSend(double value)
  *
  * @return char* to the string
  */
-char* Thermostat::getValueString()
+bool Thermostat::getValueString(char* data, int size)
 {
     int vI, vD;
     int sI, sD;
@@ -311,11 +342,15 @@ char* Thermostat::getValueString()
     StringHelp::splitDouble(value, &vI, &vD);
     StringHelp::splitDouble(setpoint, &sI, &sD);
 
-    snprintf(outString, OUT_STRING_MAX_SIZE,
+    int res = snprintf(data, size,
             "value=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
             vI, vD,
             sI, sD, getOutValue());
-    return outString;
+
+    if(res < size)
+        return true;
+    
+    return false;
 }
 
 /**
@@ -477,7 +512,7 @@ bool Thermostat::alarmHighTimeToSend()
  *
  * @return char* with the low alarm string
  */
-char* Thermostat::getAlarmLowString()
+bool Thermostat::getAlarmLowString(char* data, int size)
 {
     int vI, vD;
     int sI, sD;
@@ -487,13 +522,17 @@ char* Thermostat::getAlarmLowString()
     StringHelp::splitDouble(setpoint, &sI, &sD);
     StringHelp::splitDouble((setpoint-alarmLevelLow), &aI, &aD);
 
-    snprintf(outString, OUT_STRING_MAX_SIZE,
+    int res = snprintf(data, size,
             "Alarm: Low ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
             vI, vD,
             aI, aD,
             sI, sD,
             getOutValue());
-    return outString;
+
+    if(res < size)
+        return true;
+    
+    return false;
 }
 
 /**
@@ -503,7 +542,7 @@ char* Thermostat::getAlarmLowString()
  *
  * @return char* with the high alarm string
  */
-char* Thermostat::getAlarmHighString()
+bool Thermostat::getAlarmHighString(char* data, int size)
 {
     int vI, vD;
     int sI, sD;
@@ -513,13 +552,17 @@ char* Thermostat::getAlarmHighString()
     StringHelp::splitDouble(setpoint, &sI, &sD);
     StringHelp::splitDouble((setpoint+alarmLevelHigh), &aI, &aD);
 
-    snprintf(outString, OUT_STRING_MAX_SIZE,
+    int res = snprintf(data, size,
             "Alarm: High ; value=%d.%02d ; alarm=%d.%02d ; setpoint=%d.%02d ; output=%03d%%",
             vI, vD,
             aI, aD,
             sI, sD,
             getOutValue());
-    return outString;
+
+    if(res < size)
+        return true;
+    
+    return false;
 }
 
 /**
@@ -529,6 +572,10 @@ void Thermostat::alarmLowIsSent()
 {
     switch ( alarmLow )
     {
+        case ALARM_ACTIVE_SENT:
+            break;
+        case ALARM_NOT_ACTIVE:
+            break;
         case ALARM_ACTIVE_NOT_SENT:
             alarmLow = ALARM_ACTIVE_SENT;
             break;
@@ -542,6 +589,10 @@ void Thermostat::alarmHighIsSent()
 {
     switch ( alarmHigh )
     {
+        case ALARM_ACTIVE_SENT:
+            break;
+        case ALARM_NOT_ACTIVE:
+            break;
         case ALARM_ACTIVE_NOT_SENT:
             alarmHigh = ALARM_ACTIVE_SENT;
             break;
