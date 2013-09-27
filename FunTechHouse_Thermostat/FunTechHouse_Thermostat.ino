@@ -33,21 +33,21 @@
 #define OUT_STR_MAX 100
 
 // Update these with values suitable for your network.
-byte mac[]    = {  0x90, 0xA2, 0xDA, 0x0D, 0x51, 0xB3 };
+byte mac[]    = {  0xDE, 0xED, 0xBA, 0xFE, 0xFE, 0x05 };
 
 // The MQTT device name, this must be unique
-char project_name[]  = "FunTechHouse_Thermostat_VMP";
+char project_name[]  = "FunTechHouse_Thermostat";
 
-Thermostat thermostat(1, THERMOSTAT_TYPE_BIN_CNT);
-#define SENSOR_CNT 4
+Thermostat thermostat(3, THERMOSTAT_TYPE_BIN_CNT);
+#define SENSOR_CNT 2
 TemperatureSensor sensors[SENSOR_CNT];
 
 PubSubClient client("mosqhub", 1883, callback);
 
 //The stage out relays is connected to:
 int gpioStage0  = 2;
-int gpioStage1  = 3;
-int gpioStage2  = 5;
+int gpioStage1  = 5; //Upps built the hw with the gpio in the wrong order.
+int gpioStage2  = 3;
 
 void callback(char* topic, byte* payload, unsigned int length)
 {
@@ -58,48 +58,32 @@ void callback(char* topic, byte* payload, unsigned int length)
 
 void configure()
 {
-    //Config the thermostat, GT2-VMP on A0
-    thermostat.setSetpoint(45.0, 10.0); //45..35
+    //Config the thermostat
+    thermostat.setSetpoint(60.0, 5.0); //55..60
     thermostat.setValueDiff(1.0);
-    thermostat.setDelayOff(20*60); // 20min
-    thermostat.setAlarmLevels(true, 15.0, true, 15.0); // 45-15=30 45+15=60
+    thermostat.setOutMax(0x3); // => 4(9kW), later 2(4kW) or 3(6kW)
+    thermostat.setAlarmLevels(true, 15.0, true, 10.0); // 60-15=45 60+10=70
     thermostat.setTopic(
-            "FunTechHouse/Pannrum/VMP_Data",
-            "FunTechHouse/Pannrum/VMP"
+            "FunTechHouse/Pannrum/ElPanna_Data",
+            "FunTechHouse/Pannrum/ElPanna"
             );
 
-    //Config the first sensor, GT1-VMP
+    //Config the first sensor
     sensors[0].setAlarmLevels(false, 25.0, false, 22.0);
     sensors[0].setSensor(TemperatureSensor::LM35DZ, A1);
-    sensors[0].setDiffToSend(1.0);
+    sensors[0].setDiffToSend(1.4);
     sensors[0].setTopic(
-            "FunTechHouse/Pannrum/GT1-VMP_Data",
-            "FunTechHouse/Pannrum/GT1-VMP"
+            "FunTechHouse/Pannrum/GT1-VV_Data",
+            "FunTechHouse/Pannrum/GT1-VV"
             );
 
-    //Then configure a second sensor, GT3-RAD
+    //Then configure a second sensor
     sensors[1].setAlarmLevels(false, 25.0, false, 22.0);
     sensors[1].setSensor(TemperatureSensor::LM35DZ, A2);
-    sensors[1].setDiffToSend(1.0);
+    sensors[1].setDiffToSend(1.4);
     sensors[1].setTopic(
-            "FunTechHouse/Pannrum/GT3-RAD_Data",
-            "FunTechHouse/Pannrum/GT3-RAD"
-            );
-
-    sensors[2].setAlarmLevels(false, 25.0, false, 22.0);
-    sensors[2].setSensor(TemperatureSensor::LM35DZ, A3);
-    sensors[2].setDiffToSend(1.0);
-    sensors[2].setTopic(
-            "FunTechHouse/Pannrum/GT3-VMP_Data",
-            "FunTechHouse/Pannrum/GT3-VMP"
-            );
-
-    sensors[3].setAlarmLevels(false, 25.0, false, 22.0);
-    sensors[3].setSensor(TemperatureSensor::LM35DZ, A4);
-    sensors[3].setDiffToSend(1.0);
-    sensors[3].setTopic(
-            "FunTechHouse/Pannrum/GT4-RAD_Data",
-            "FunTechHouse/Pannrum/GT4-RAD"
+            "FunTechHouse/Pannrum/GT2-VV_Data",
+            "FunTechHouse/Pannrum/GT2-VV"
             );
 }
 
