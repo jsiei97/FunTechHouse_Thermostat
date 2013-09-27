@@ -1,7 +1,7 @@
 /**
  * @file FunTechHouse_Thermostat.ino
  * @author Johan Simonsson
- * @brief Main file
+ * @brief MultiStageThermostat live test
  */
 
 /*
