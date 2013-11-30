@@ -1,0 +1,3 @@
+[submodule "mod/FT_EDS"]
+	path = mod/FT_EDS
+	url = git@github.com:jsiei97/FT_EDS.git
